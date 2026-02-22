@@ -98,7 +98,7 @@ var config = {
   alignment: 'right',
   hidden: false,
   title: 'Embalse de Orellana',
-  image: './assets/orellana1.jpg',
+  image: './assets/orellana.jpg',
   description: `
     <p>El embalse de Orellana es uno de los más conocidos por sus usos recreativos y su entorno natural.</p>
     <p>Es clave para el abastecimiento y el regadío en la zona, y su nivel refleja muy bien los ciclos de sequía y recuperación.</p>
