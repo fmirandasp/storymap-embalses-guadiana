@@ -367,6 +367,26 @@ function clearHighlight() {
   ]);
 }
 
+function highlightEmbalsePolygon(nombre) {
+  if (!map.getLayer('embalses-polygons-highlight')) return;
+
+  map.setFilter('embalses-polygons-highlight', [
+    '==',
+    ['get', 'nombre'],
+    nombre
+  ]);
+}
+
+function clearEmbalsePolygonHighlight() {
+  if (!map.getLayer('embalses-polygons-highlight')) return;
+
+  map.setFilter('embalses-polygons-highlight', [
+    '==',
+    ['get', 'nombre'],
+    ''
+  ]);
+}
+
 async function showEmbalsePopup(nombre) {
   const data = await loadEmbalsesData();
   const feature = data.features.find(
@@ -404,60 +424,70 @@ function closeEmbalsePopup() {
 
 window.onCijaraEnter = async function () {
   highlightEmbalse('Cíjara');
+  highlightEmbalsePolygon('Embalse de Cíjara');
   highlightLabel('Cíjara');
   await showEmbalsePopup('Cíjara');
 };
 
 window.onCijaraExit = function () {
   clearHighlight();
+  clearEmbalsePolygonHighlight();
   clearHighlightLabel();
   closeEmbalsePopup();
 };
 
 window.onGarciaDeSolaEnter = async function () {
   highlightEmbalse('García de Sola');
+  highlightEmbalsePolygon('Embalse de García de Sola');
   highlightLabel('García de Sola');
   await showEmbalsePopup('García de Sola');
 };
 
 window.onGarciaDeSolaExit = function () {
   clearHighlight();
+  clearEmbalsePolygonHighlight();
   clearHighlightLabel();
   closeEmbalsePopup();
 };
 
 window.onOrellanaEnter = async function () {
   highlightEmbalse('Orellana');
+  highlightEmbalsePolygon('Embalse de Orellana');
   highlightLabel('Orellana');
   await showEmbalsePopup('Orellana');
 };
 
 window.onOrellanaExit = function () {
   clearHighlight();
+  clearEmbalsePolygonHighlight();
   clearHighlightLabel();
   closeEmbalsePopup();
 };
 
 window.onLaSerenaEnter = async function () {
   highlightEmbalse('La Serena');
+  highlightEmbalsePolygon('Embalse de la Serena');
   highlightLabel('La Serena');
   await showEmbalsePopup('La Serena');
 };
 
 window.onLaSerenaExit = function () {
   clearHighlight();
+  clearEmbalsePolygonHighlight();
   clearHighlightLabel();
   closeEmbalsePopup();
 };
 
 window.onZujarEnter = async function () {
   highlightEmbalse('Zújar');
+  highlightEmbalsePolygon('Embalse del Zújar');
   highlightLabel('Zújar');
   await showEmbalsePopup('Zújar');
 };
 
 window.onZujarExit = function () {
   clearHighlight();
+  clearEmbalsePolygonHighlight();
   clearHighlightLabel();
   closeEmbalsePopup();
 };
@@ -471,6 +501,43 @@ map.on("load", function () {
   map.addSource('embalses', {
     type: 'geojson',
     data: 'data/embalses.geojson'
+  });
+
+  map.addSource('embalses-polygons', {
+    type: 'geojson',
+    data: 'data/pol-embalses.geojson'
+  });
+
+  map.addLayer({
+    id: 'embalses-polygons',
+    type: 'fill',
+    source: 'embalses-polygons',
+    paint: {
+      'fill-color': '#4ea8de',
+      'fill-opacity': 0.12
+    }
+  });
+
+  map.addLayer({
+    id: 'embalses-polygons-highlight',
+    type: 'fill',
+    source: 'embalses-polygons',
+    filter: ['==', ['get', 'nombre'], ''],
+    paint: {
+      'fill-color': '#ffb703',
+      'fill-opacity': 0.45
+    }
+  });
+
+  map.addLayer({
+    id: 'embalses-polygons-outline',
+    type: 'line',
+    source: 'embalses-polygons',
+    paint: {
+      'line-color': '#01497c',
+      'line-width': 1.5,
+      'line-opacity': 0.7
+    }
   });
 
   map.addLayer({
