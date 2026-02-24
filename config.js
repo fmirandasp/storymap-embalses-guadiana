@@ -43,6 +43,35 @@ var config = {
   onChapterExit: [  ]
 },
 
+/* ===== NUEVO CAPÍTULO (Flourish) ===== */
+{
+  id: 'grafico',
+  alignment: 'full',
+  hidden: false,
+  title: 'Evolución semanal (visualización)',
+  description: `
+    <p>Antes de entrar embalse por embalse, mira la evolución semanal agregada.</p>
+
+    <div class="flourish-embed flourish-chart" data-src="visualisation/27766133">
+      <noscript>
+        <img src="https://public.flourish.studio/visualisation/27766133/thumbnail" width="100%" alt="visualization" />
+      </noscript>
+    </div>
+  `,
+  location: {
+    center: [-5.414837, 39.219733],
+    zoom: 9,
+    pitch: 0,
+    bearing: 0
+  },
+  mapAnimation: 'flyTo',
+  rotateAnimation: false,
+  onChapterEnter: [
+    { layer: 'embalses-labels', opacity: 1 }
+  ],
+  onChapterExit: []
+},
+
 {
   id: 'cijara',
   alignment: 'right',
