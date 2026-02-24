@@ -11,6 +11,10 @@
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css' rel='stylesheet' />
     <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-globe-minimap@1.2.0/dist/bundle.js"></script>
     <script src="https://unpkg.com/scrollama"></script>
+
+    <!-- Flourish: cargar UNA vez para que los embeds funcionen -->
+    <script src="https://public.flourish.studio/resources/embed.js" defer></script>
+
     <style>
         body {
             margin: 0;
@@ -42,7 +46,8 @@
 
             padding: 28px 40px;
             gap: 24px;
-}
+        }
+
         #header h1,
         #header h2,
         #header p {
@@ -138,99 +143,172 @@
         .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
             touch-action: unset;
         }
-    
 
-/* ===== UI: leyenda / filtros / búsqueda / progreso ===== */
-#map-ui{
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 6;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: min(340px, calc(100vw - 24px));
-  pointer-events: none; /* solo los elementos internos interactúan */
-}
-#map-ui .panel{
-  pointer-events: auto;
-  border-radius: 14px;
-  padding: 12px 12px 10px;
-  background: rgba(10, 10, 10, 0.78);
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  backdrop-filter: blur(8px);
-}
-#map-ui .panel h4{
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  letter-spacing: .2px;
-}
-#legend .item{ display:flex; align-items:center; gap:10px; margin:6px 0; font-size: 13px;}
-#legend .swatch{ width:14px; height:14px; border-radius: 999px; border:2px solid rgba(255,255,255,.9); }
-#legend .swatch.fill{ border-radius: 6px; border:1px solid rgba(255,255,255,.25); }
+        /* ===== Flourish responsive (evita “saltos” raros en full width) ===== */
+        .flourish-embed {
+            width: 100%;
+            max-width: 100%;
+        }
 
-#filters label{ display:block; font-size: 12px; opacity:.9; margin-top:8px;}
-#filters input[type="search"], #filters select{
-  width: 100%;
-  margin-top: 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.08);
-  color: #fff;
-  padding: 8px 10px;
-  outline: none;
-}
-#filters input[type="range"]{ width:100%; margin-top: 8px; }
-#filters .row{ display:flex; gap:10px; align-items:center; }
-#filters .muted{ font-size: 12px; opacity: .85; margin-top: 6px; }
-#filters button{
-  margin-top: 10px;
-  width: 100%;
-  padding: 9px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.10);
-  color: #fff;
-  cursor: pointer;
-}
-#filters button:hover{ background: rgba(255,255,255,.16); }
+        /* ===== UI: leyenda / filtros / búsqueda / progreso ===== */
+        #map-ui {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 6;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(340px, calc(100vw - 24px));
+            pointer-events: none;
+            /* solo los elementos internos interactúan */
+        }
 
-#progress.panel{
-  position: fixed;
-  left: 12px;
-  bottom: 12px;
-  right: auto;
-  width: min(280px, calc(100vw - 24px));
-}
-#progress .bar{
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.14);
-  overflow:hidden;
-  margin-top: 8px;
-}
-#progress .bar > div{
-  height: 100%;
-  width: 0%;
-  background: rgba(255,255,255,.85);
-}
-#progress .text{ font-size: 12px; opacity: .9; }
+        #map-ui .panel {
+            pointer-events: auto;
+            border-radius: 14px;
+            padding: 12px 12px 10px;
+            background: rgba(10, 10, 10, 0.78);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(8px);
+        }
 
-/* Mostrar/ocultar elementos cuando se activa el modo exploración */
-body:not(.explore-mode) .explore-only{ display:none; }
-body.explore-mode .explore-only{ display:block; }
+        #map-ui .panel h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            letter-spacing: .2px;
+        }
 
-/* Oculta controles nativos de Mapbox hasta modo exploración */
-body:not(.explore-mode) .mapboxgl-ctrl-top-right{ display:none; }
-body:not(.explore-mode) .mapboxgl-ctrl-bottom-right{ display:none; }
+        #legend .item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0;
+            font-size: 13px;
+        }
 
-/* Responsive: apila el UI de forma más compacta */
-@media (max-width: 640px){
-  #map-ui{ right: 10px; top: 10px; }
-  #progress.panel{ left: 10px; bottom: 10px; }
-}
-</style>
+        #legend .swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, .9);
+        }
+
+        #legend .swatch.fill {
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, .25);
+        }
+
+        #filters label {
+            display: block;
+            font-size: 12px;
+            opacity: .9;
+            margin-top: 8px;
+        }
+
+        #filters input[type="search"],
+        #filters select {
+            width: 100%;
+            margin-top: 6px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+            padding: 8px 10px;
+            outline: none;
+        }
+
+        #filters input[type="range"] {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        #filters .row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #filters .muted {
+            font-size: 12px;
+            opacity: .85;
+            margin-top: 6px;
+        }
+
+        #filters button {
+            margin-top: 10px;
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            background: rgba(255, 255, 255, .10);
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #filters button:hover {
+            background: rgba(255, 255, 255, .16);
+        }
+
+        #progress.panel {
+            position: fixed;
+            left: 12px;
+            bottom: 12px;
+            right: auto;
+            width: min(280px, calc(100vw - 24px));
+        }
+
+        #progress .bar {
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .14);
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        #progress .bar>div {
+            height: 100%;
+            width: 0%;
+            background: rgba(255, 255, 255, .85);
+        }
+
+        #progress .text {
+            font-size: 12px;
+            opacity: .9;
+        }
+
+        /* Mostrar/ocultar elementos cuando se activa el modo exploración */
+        body:not(.explore-mode) .explore-only {
+            display: none;
+        }
+
+        body.explore-mode .explore-only {
+            display: block;
+        }
+
+        /* Oculta controles nativos de Mapbox hasta modo exploración */
+        body:not(.explore-mode) .mapboxgl-ctrl-top-right {
+            display: none;
+        }
+
+        body:not(.explore-mode) .mapboxgl-ctrl-bottom-right {
+            display: none;
+        }
+
+        /* Responsive: apila el UI de forma más compacta */
+        @media (max-width: 640px) {
+            #map-ui {
+                right: 10px;
+                top: 10px;
+            }
+
+            #progress.panel {
+                left: 10px;
+                bottom: 10px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -281,16 +359,16 @@ body:not(.explore-mode) .mapboxgl-ctrl-bottom-right{ display:none; }
         features.setAttribute('id', 'features');
 
         var header = document.createElement('div');
-        
+
 
         // LOGO
         var logo = document.createElement('img');
-            logo.src = 'assets/LOGO VISUALIZACION DE DATOS.svg';
-            logo.classList.add('logo');
-            header.appendChild(logo);
+        logo.src = 'assets/LOGO VISUALIZACION DE DATOS.svg';
+        logo.classList.add('logo');
+        header.appendChild(logo);
 
         var headerText = document.createElement('div');
-            headerText.classList.add('header-text');
+        headerText.classList.add('header-text');
 
         if (config.title) {
             var titleText = document.createElement('h1');
@@ -413,16 +491,16 @@ body:not(.explore-mode) .mapboxgl-ctrl-bottom-right{ display:none; }
         disableMapInteractions();
 
         // ===== UI flotante (leyenda + filtros + búsqueda + progreso) =====
-        
-    function createMapUI() {
-      const ui = document.createElement('div');
-      ui.id = 'map-ui';
 
-      // Leyenda
-      const legend = document.createElement('div');
-      legend.id = 'legend';
-      legend.className = 'panel explore-only';
-      legend.innerHTML = `
+        function createMapUI() {
+            const ui = document.createElement('div');
+            ui.id = 'map-ui';
+
+            // Leyenda
+            const legend = document.createElement('div');
+            legend.id = 'legend';
+            legend.className = 'panel explore-only';
+            legend.innerHTML = `
         <h4>Leyenda</h4>
         <div class="item"><span class="swatch" style="background:#0077b6;"></span><span>Embalse (punto)</span></div>
         <div class="item"><span class="swatch" style="background:#ffb703;"></span><span>Embalse destacado</span></div>
@@ -430,11 +508,11 @@ body:not(.explore-mode) .mapboxgl-ctrl-bottom-right{ display:none; }
         <div class="item"><span class="swatch fill" style="background:transparent; border:2px solid #01497c;"></span><span>Contorno</span></div>
       `;
 
-      // Filtros + búsqueda
-      const filters = document.createElement('div');
-      filters.id = 'filters';
-      filters.className = 'panel explore-only';
-      filters.innerHTML = `
+            // Filtros + búsqueda
+            const filters = document.createElement('div');
+            filters.id = 'filters';
+            filters.className = 'panel explore-only';
+            filters.innerHTML = `
         <h4>Explorar</h4>
 
         <label for="searchEmbalse">Buscar embalse</label>
@@ -461,21 +539,21 @@ body:not(.explore-mode) .mapboxgl-ctrl-bottom-right{ display:none; }
         <button id="resetFilters" type="button">Restablecer filtros</button>
       `;
 
-      // Progreso (siempre visible)
-      const progress = document.createElement('div');
-      progress.id = 'progress';
-      progress.className = 'panel';
-      progress.innerHTML = `
+            // Progreso (siempre visible)
+            const progress = document.createElement('div');
+            progress.id = 'progress';
+            progress.className = 'panel';
+            progress.innerHTML = `
         <div class="text" id="progressText">Capítulo 1 / ${config.chapters.length}</div>
         <div class="bar"><div id="progressBar"></div></div>
       `;
 
-      ui.appendChild(legend);
-      ui.appendChild(filters);
+            ui.appendChild(legend);
+            ui.appendChild(filters);
 
-      document.body.appendChild(ui);
-return { ui, legend, filters, progress };
-    }
+            document.body.appendChild(ui);
+            return { ui, legend, filters, progress };
+        }
 
 
         const uiRefs = createMapUI();
@@ -529,7 +607,7 @@ return { ui, legend, filters, progress };
             const names = data.features
                 .map(f => f.properties?.nombre)
                 .filter(Boolean)
-                .sort((a,b) => a.localeCompare(b, 'es'));
+                .sort((a, b) => a.localeCompare(b, 'es'));
             names.forEach(n => {
                 const opt = document.createElement('option');
                 opt.value = n;
@@ -539,7 +617,7 @@ return { ui, legend, filters, progress };
             // ríos
             const rivers = Array.from(new Set(
                 data.features.map(f => f.properties?.rio).filter(Boolean)
-            )).sort((a,b) => a.localeCompare(b, 'es'));
+            )).sort((a, b) => a.localeCompare(b, 'es'));
 
             // limpia (mantén "Todos")
             riverSelect.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
@@ -688,402 +766,392 @@ return { ui, legend, filters, progress };
             marker.setLngLat(config.chapters[0].location.center).addTo(map);
         }
 
-// instantiate the scrollama
+        // instantiate the scrollama
 
-var scroller = scrollama();
+        var scroller = scrollama();
 
-/* ===========================
-   FUNCIONES HIGHLIGHT + POPUP
-=========================== */
+        /* ===========================
+           FUNCIONES HIGHLIGHT + POPUP
+        =========================== */
 
-let activePopup = null;
-let embalsesData = null;
+        let activePopup = null;
+        let embalsesData = null;
 
-async function loadEmbalsesData() {
-  if (embalsesData) return embalsesData;
-  const response = await fetch('data/embalses.geojson');
-  embalsesData = await response.json();
-  return embalsesData;
-}
+        async function loadEmbalsesData() {
+            if (embalsesData) return embalsesData;
+            const response = await fetch('data/embalses.geojson');
+            embalsesData = await response.json();
+            return embalsesData;
+        }
 
-function highlightEmbalse(nombre) {
-  if (!map.getLayer('embalses-highlight')) return;
-  map.setFilter('embalses-highlight', [
-    '==',
-    ['get', 'nombre'],
-    nombre
-  ]);
-}
+        function highlightEmbalse(nombre) {
+            if (!map.getLayer('embalses-highlight')) return;
+            map.setFilter('embalses-highlight', [
+                '==',
+                ['get', 'nombre'],
+                nombre
+            ]);
+        }
 
+        function highlightLabel(nombre) {
+            if (!map.getLayer('embalses-label-highlight')) return;
 
+            map.setFilter('embalses-label-highlight', [
+                '==',
+                ['get', 'nombre'],
+                nombre
+            ]);
+        }
 
+        function clearHighlightLabel() {
+            if (!map.getLayer('embalses-label-highlight')) return;
 
+            map.setFilter('embalses-label-highlight', [
+                '==',
+                ['get', 'nombre'],
+                ''
+            ]);
+        }
 
+        function clearHighlight() {
+            if (!map.getLayer('embalses-highlight')) return;
+            map.setFilter('embalses-highlight', [
+                '==',
+                ['get', 'nombre'],
+                ''
+            ]);
+        }
 
+        function highlightEmbalsePolygon(nombre) {
+            if (!map.getLayer('embalses-polygons-highlight')) return;
 
-function highlightLabel(nombre) {
-  if (!map.getLayer('embalses-label-highlight')) return;
+            map.setFilter('embalses-polygons-highlight', [
+                '==',
+                ['get', 'nombre'],
+                nombre
+            ]);
+        }
 
-  map.setFilter('embalses-label-highlight', [
-    '==',
-    ['get', 'nombre'],
-    nombre
-  ]);
-}
+        function clearEmbalsePolygonHighlight() {
+            if (!map.getLayer('embalses-polygons-highlight')) return;
 
-function clearHighlightLabel() {
-  if (!map.getLayer('embalses-label-highlight')) return;
+            map.setFilter('embalses-polygons-highlight', [
+                '==',
+                ['get', 'nombre'],
+                ''
+            ]);
+        }
 
-  map.setFilter('embalses-label-highlight', [
-    '==',
-    ['get', 'nombre'],
-    ''
-  ]);
-}
+        async function showEmbalsePopup(nombre) {
+            const data = await loadEmbalsesData();
+            const feature = data.features.find(
+                f => f.properties && f.properties.nombre === nombre
+            );
+            if (!feature) return;
 
-function clearHighlight() {
-  if (!map.getLayer('embalses-highlight')) return;
-  map.setFilter('embalses-highlight', [
-    '==',
-    ['get', 'nombre'],
-    ''
-  ]);
-}
+            const coords = feature.geometry.coordinates;
+            const props = feature.properties;
 
-function highlightEmbalsePolygon(nombre) {
-  if (!map.getLayer('embalses-polygons-highlight')) return;
+            if (activePopup) activePopup.remove();
 
-  map.setFilter('embalses-polygons-highlight', [
-    '==',
-    ['get', 'nombre'],
-    nombre
-  ]);
-}
+            activePopup = new mapboxgl.Popup({
+                closeButton: true,
+                closeOnClick: false
+            })
+                .setLngLat(coords)
+                .setHTML(
+                    '<h3>' + props.nombre + '</h3>' +
+                    '<p><strong>Río:</strong> ' + props.rio + '</p>' +
+                    '<p><strong>Capacidad:</strong> ' + props.capacidad + '</p>'
+                )
+                .addTo(map);
+        }
 
-function clearEmbalsePolygonHighlight() {
-  if (!map.getLayer('embalses-polygons-highlight')) return;
-
-  map.setFilter('embalses-polygons-highlight', [
-    '==',
-    ['get', 'nombre'],
-    ''
-  ]);
-}
-
-async function showEmbalsePopup(nombre) {
-  const data = await loadEmbalsesData();
-  const feature = data.features.find(
-    f => f.properties && f.properties.nombre === nombre
-  );
-  if (!feature) return;
-
-  const coords = feature.geometry.coordinates;
-  const props = feature.properties;
-
-  if (activePopup) activePopup.remove();
-
-  activePopup = new mapboxgl.Popup({
-    closeButton: true,
-    closeOnClick: false
-  })
-    .setLngLat(coords)
-    .setHTML(
-      '<h3>' + props.nombre + '</h3>' +
-      '<p><strong>Río:</strong> ' + props.rio + '</p>' +
-      '<p><strong>Capacidad:</strong> ' + props.capacidad + '</p>'
-    )
-    .addTo(map);
-}
-
-function closeEmbalsePopup() {
-  if (activePopup) {
-    activePopup.remove();
-    activePopup = null;
-  }
-}
+        function closeEmbalsePopup() {
+            if (activePopup) {
+                activePopup.remove();
+                activePopup = null;
+            }
+        }
 
 
-/* === CALLBACKS CAPÍTULOS === */
+        /* === CALLBACKS CAPÍTULOS === */
 
-window.onCijaraEnter = async function () {
-  highlightEmbalse('Cíjara');
-  highlightEmbalsePolygon('Embalse de Cíjara');
-  highlightLabel('Cíjara');
-  await showEmbalsePopup('Cíjara');
-};
+        window.onCijaraEnter = async function () {
+            highlightEmbalse('Cíjara');
+            highlightEmbalsePolygon('Embalse de Cíjara');
+            highlightLabel('Cíjara');
+            await showEmbalsePopup('Cíjara');
+        };
 
-window.onCijaraExit = function () {
-  clearHighlight();
-  clearEmbalsePolygonHighlight();
-  clearHighlightLabel();
-  closeEmbalsePopup();
-};
+        window.onCijaraExit = function () {
+            clearHighlight();
+            clearEmbalsePolygonHighlight();
+            clearHighlightLabel();
+            closeEmbalsePopup();
+        };
 
-window.onGarciaDeSolaEnter = async function () {
-  highlightEmbalse('García de Sola');
-  highlightEmbalsePolygon('Embalse de García de Sola');
-  highlightLabel('García de Sola');
-  await showEmbalsePopup('García de Sola');
-};
+        window.onGarciaDeSolaEnter = async function () {
+            highlightEmbalse('García de Sola');
+            highlightEmbalsePolygon('Embalse de García de Sola');
+            highlightLabel('García de Sola');
+            await showEmbalsePopup('García de Sola');
+        };
 
-window.onGarciaDeSolaExit = function () {
-  clearHighlight();
-  clearEmbalsePolygonHighlight();
-  clearHighlightLabel();
-  closeEmbalsePopup();
-};
+        window.onGarciaDeSolaExit = function () {
+            clearHighlight();
+            clearEmbalsePolygonHighlight();
+            clearHighlightLabel();
+            closeEmbalsePopup();
+        };
 
-window.onOrellanaEnter = async function () {
-  highlightEmbalse('Orellana');
-  highlightEmbalsePolygon('Embalse de Orellana');
-  highlightLabel('Orellana');
-  await showEmbalsePopup('Orellana');
-};
+        window.onOrellanaEnter = async function () {
+            highlightEmbalse('Orellana');
+            highlightEmbalsePolygon('Embalse de Orellana');
+            highlightLabel('Orellana');
+            await showEmbalsePopup('Orellana');
+        };
 
-window.onOrellanaExit = function () {
-  clearHighlight();
-  clearEmbalsePolygonHighlight();
-  clearHighlightLabel();
-  closeEmbalsePopup();
-};
+        window.onOrellanaExit = function () {
+            clearHighlight();
+            clearEmbalsePolygonHighlight();
+            clearHighlightLabel();
+            closeEmbalsePopup();
+        };
 
-window.onLaSerenaEnter = async function () {
-  highlightEmbalse('La Serena');
-  highlightEmbalsePolygon('Embalse de la Serena');
-  highlightLabel('La Serena');
-  await showEmbalsePopup('La Serena');
-};
+        window.onLaSerenaEnter = async function () {
+            highlightEmbalse('La Serena');
+            highlightEmbalsePolygon('Embalse de la Serena');
+            highlightLabel('La Serena');
+            await showEmbalsePopup('La Serena');
+        };
 
-window.onLaSerenaExit = function () {
-  clearHighlight();
-  clearEmbalsePolygonHighlight();
-  clearHighlightLabel();
-  closeEmbalsePopup();
-};
+        window.onLaSerenaExit = function () {
+            clearHighlight();
+            clearEmbalsePolygonHighlight();
+            clearHighlightLabel();
+            closeEmbalsePopup();
+        };
 
-window.onZujarEnter = async function () {
-  highlightEmbalse('Zújar');
-  highlightEmbalsePolygon('Embalse del Zújar');
-  highlightLabel('Zújar');
-  await showEmbalsePopup('Zújar');
-};
+        window.onZujarEnter = async function () {
+            highlightEmbalse('Zújar');
+            highlightEmbalsePolygon('Embalse del Zújar');
+            highlightLabel('Zújar');
+            await showEmbalsePopup('Zújar');
+        };
 
-window.onZujarExit = function () {
-  clearHighlight();
-  clearEmbalsePolygonHighlight();
-  clearHighlightLabel();
-  closeEmbalsePopup();
-};
+        window.onZujarExit = function () {
+            clearHighlight();
+            clearEmbalsePolygonHighlight();
+            clearHighlightLabel();
+            closeEmbalsePopup();
+        };
 
+        map.on("load", function () {
 
+            // ====== EMBALSES (GeoJSON + capa + popups) ======
+            map.addSource('embalses', {
+                type: 'geojson',
+                data: 'data/embalses.geojson'
+            });
 
+            map.addSource('embalses-polygons', {
+                type: 'geojson',
+                data: 'data/pol-embalses.geojson'
+            });
 
-map.on("load", function () {
+            map.addLayer({
+                id: 'embalses-polygons',
+                type: 'fill',
+                source: 'embalses-polygons',
+                paint: {
+                    'fill-color': '#f03b20',
 
-  // ====== EMBALSES (GeoJSON + capa + popups) ======
-  map.addSource('embalses', {
-    type: 'geojson',
-    data: 'data/embalses.geojson'
-  });
+                    //'#4ea8de',
+                    'fill-opacity': 0.12
+                }
+            });
 
-  map.addSource('embalses-polygons', {
-    type: 'geojson',
-    data: 'data/pol-embalses.geojson'
-  });
+            map.addLayer({
+                id: 'embalses-polygons-highlight',
+                type: 'fill',
+                source: 'embalses-polygons',
+                filter: ['==', ['get', 'nombre'], ''],
+                paint: {
+                    'fill-color': '#f03b20',
 
-  map.addLayer({
-    id: 'embalses-polygons',
-    type: 'fill',
-    source: 'embalses-polygons',
-    paint: {
-      'fill-color': '#f03b20',
-          
-          //'#4ea8de',
-      'fill-opacity': 0.12
-    }
-  });
+                    //'#ffb703',
+                    'fill-opacity': 0.45
+                }
+            });
 
-  map.addLayer({
-    id: 'embalses-polygons-highlight',
-    type: 'fill',
-    source: 'embalses-polygons',
-    filter: ['==', ['get', 'nombre'], ''],
-    paint: {
-      'fill-color': '#f03b20',
+            map.addLayer({
+                id: 'embalses-polygons-outline',
+                type: 'line',
+                source: 'embalses-polygons',
+                paint: {
+                    'line-color': '#01497c',
+                    'line-width': 1.5,
+                    'line-opacity': 0.7
+                }
+            });
 
-        //'#ffb703',
-      'fill-opacity': 0.45
-    }
-  });
+            map.addLayer({
+                id: 'embalses-points',
+                type: 'circle',
+                source: 'embalses',
+                paint: {
+                    'circle-radius': 8,
+                    'circle-color': '#0077b6',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                }
+            });
 
-  map.addLayer({
-    id: 'embalses-polygons-outline',
-    type: 'line',
-    source: 'embalses-polygons',
-    paint: {
-      'line-color': '#01497c',
-      'line-width': 1.5,
-      'line-opacity': 0.7
-    }
-  });
+            // Capa de resaltado (para capítulos)
+            map.addLayer({
+                id: 'embalses-highlight',
+                type: 'circle',
+                source: 'embalses',
+                filter: ['==', ['get', 'nombre'], ''],
+                paint: {
+                    'circle-radius': 16,
+                    'circle-color': '#ffb703',
+                    'circle-opacity': 0.95,
+                    'circle-stroke-width': 3,
+                    'circle-stroke-color': '#ffffff'
+                }
+            });
 
-  map.addLayer({
-    id: 'embalses-points',
-    type: 'circle',
-    source: 'embalses',
-    paint: {
-      'circle-radius': 8,
-      'circle-color': '#0077b6',
-      'circle-stroke-width': 2,
-      'circle-stroke-color': '#ffffff'
-    }
-  });
-
-  // Capa de resaltado (para capítulos)
-  map.addLayer({
-    id: 'embalses-highlight',
-    type: 'circle',
-    source: 'embalses',
-    filter: ['==', ['get', 'nombre'], ''],
-    paint: {
-      'circle-radius': 16,
-      'circle-color': '#ffb703',
-      'circle-opacity': 0.95,
-      'circle-stroke-width': 3,
-      'circle-stroke-color': '#ffffff'
-    }
-  });
-
-  // Rótulos
-  map.addLayer({
-    id: 'embalses-labels',
-    type: 'symbol',
-    source: 'embalses',
-    layout: {
-      'text-field': ['get', 'rotulo'],
-      'text-font': ['Open Sans Bold'],
-      'text-size': 14,
-      'text-offset': [0, 1.5],
-      'text-anchor': 'top',
-      'text-allow-overlap': true
-    },
-    paint: {
-      'text-color': '#003366',
-      'text-halo-color': '#ffffff',
-      'text-halo-width': 2
-    }
-  });
+            // Rótulos
+            map.addLayer({
+                id: 'embalses-labels',
+                type: 'symbol',
+                source: 'embalses',
+                layout: {
+                    'text-field': ['get', 'rotulo'],
+                    'text-font': ['Open Sans Bold'],
+                    'text-size': 14,
+                    'text-offset': [0, 1.5],
+                    'text-anchor': 'top',
+                    'text-allow-overlap': true
+                },
+                paint: {
+                    'text-color': '#003366',
+                    'text-halo-color': '#ffffff',
+                    'text-halo-width': 2
+                }
+            });
 
 
-map.addLayer({
-  id: 'embalses-label-highlight',
-  type: 'symbol',
-  source: 'embalses',
-  filter: ['==', ['get', 'nombre'], ''],
-  layout: {
-    'text-field': ['get', 'rotulo'],
-    'text-font': ['Open Sans Bold'],
-    'text-size': 20,          // MÁS GRANDE
-    'text-offset': [0, 1.5],
-    'text-anchor': 'top',
-    'text-allow-overlap': true
-  },
-  paint: {
-    'text-color': '#ffb703',  // COLOR DESTACADO
-    'text-halo-color': '#000000',
-    'text-halo-width': 2
-  }
-});
-  
-  map.on('click', 'embalses-points', function (e) {
-    const properties = e.features[0].properties;
+            map.addLayer({
+                id: 'embalses-label-highlight',
+                type: 'symbol',
+                source: 'embalses',
+                filter: ['==', ['get', 'nombre'], ''],
+                layout: {
+                    'text-field': ['get', 'rotulo'],
+                    'text-font': ['Open Sans Bold'],
+                    'text-size': 20,          // MÁS GRANDE
+                    'text-offset': [0, 1.5],
+                    'text-anchor': 'top',
+                    'text-allow-overlap': true
+                },
+                paint: {
+                    'text-color': '#ffb703',  // COLOR DESTACADO
+                    'text-halo-color': '#000000',
+                    'text-halo-width': 2
+                }
+            });
 
-    new mapboxgl.Popup()
-      .setLngLat(e.lngLat)
-      .setHTML(
-        '<h3>' + properties.nombre + '</h3>' +
-        '<p><strong>Río:</strong> ' + properties.rio + '</p>' +
-        '<p><strong>Capacidad:</strong> ' + properties.capacidad + '</p>'
-      )
-      .addTo(map);
-  });
+            map.on('click', 'embalses-points', function (e) {
+                const properties = e.features[0].properties;
 
-  map.on('mouseenter', 'embalses-points', function () {
-    map.getCanvas().style.cursor = 'pointer';
-  });
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(
+                        '<h3>' + properties.nombre + '</h3>' +
+                        '<p><strong>Río:</strong> ' + properties.rio + '</p>' +
+                        '<p><strong>Capacidad:</strong> ' + properties.capacidad + '</p>'
+                    )
+                    .addTo(map);
+            });
 
-  map.on('mouseleave', 'embalses-points', function () {
-    map.getCanvas().style.cursor = '';
-  });
+            map.on('mouseenter', 'embalses-points', function () {
+                map.getCanvas().style.cursor = 'pointer';
+            });
 
-  // ====== SCROLLAMA (plantilla original) ======
-  scroller
-    .setup({
-      step: '.step',
-      offset: 0.5,
-      progress: true
-    })
-    .onStepEnter(async response => {
-      var current_chapter = config.chapters.findIndex(chap => chap.id === response.element.id);
-      var chapter = config.chapters[current_chapter];
+            map.on('mouseleave', 'embalses-points', function () {
+                map.getCanvas().style.cursor = '';
+            });
 
-      response.element.classList.add('active');
+            // ====== SCROLLAMA (plantilla original) ======
+            scroller
+                .setup({
+                    step: '.step',
+                    offset: 0.5,
+                    progress: true
+                })
+                .onStepEnter(async response => {
+                    var current_chapter = config.chapters.findIndex(chap => chap.id === response.element.id);
+                    var chapter = config.chapters[current_chapter];
 
-      // Progreso
-      try {
-        const idx = current_chapter + 1;
-        const total = config.chapters.length;
-        const pt = document.getElementById('progressText');
-        const pb = document.getElementById('progressBar');
-        if (pt) pt.textContent = `Capítulo ${idx} / ${total}`;
-        if (pb) pb.style.width = `${Math.round((idx / total) * 100)}%`;
-      } catch (e) {}
+                    response.element.classList.add('active');
 
-      map[chapter.mapAnimation || 'flyTo'](chapter.location);
+                    // Progreso
+                    try {
+                        const idx = current_chapter + 1;
+                        const total = config.chapters.length;
+                        const pt = document.getElementById('progressText');
+                        const pb = document.getElementById('progressBar');
+                        if (pt) pt.textContent = `Capítulo ${idx} / ${total}`;
+                        if (pb) pb.style.width = `${Math.round((idx / total) * 100)}%`;
+                    } catch (e) { }
 
-      if (config.showMarkers) {
-        marker.setLngLat(chapter.location.center);
-      }
-      if (chapter.onChapterEnter.length > 0) {
-        chapter.onChapterEnter.forEach(setLayerOpacity);
-      }
-      if (chapter.callback) {
-        window[chapter.callback]();
-      }
-      if (chapter.rotateAnimation) {
-        map.once('moveend', () => {
-          const rotateNumber = map.getBearing();
-          map.rotateTo(rotateNumber + 180, {
-            duration: 30000,
-            easing: function (t) { return t; }
-          });
+                    map[chapter.mapAnimation || 'flyTo'](chapter.location);
+
+                    if (config.showMarkers) {
+                        marker.setLngLat(chapter.location.center);
+                    }
+                    if (chapter.onChapterEnter.length > 0) {
+                        chapter.onChapterEnter.forEach(setLayerOpacity);
+                    }
+                    if (chapter.callback) {
+                        window[chapter.callback]();
+                    }
+                    if (chapter.rotateAnimation) {
+                        map.once('moveend', () => {
+                            const rotateNumber = map.getBearing();
+                            map.rotateTo(rotateNumber + 180, {
+                                duration: 30000,
+                                easing: function (t) { return t; }
+                            });
+                        });
+                    }
+                    if (config.auto) {
+                        var next_chapter = (current_chapter + 1) % config.chapters.length;
+                        map.once('moveend', () => {
+                            document.querySelectorAll('[data-scrollama-index="' + next_chapter.toString() + '"]')[0].scrollIntoView();
+                        });
+                    }
+                })
+                .onStepExit(response => {
+                    var chapter = config.chapters.find(chap => chap.id === response.element.id);
+                    response.element.classList.remove('active');
+                    if (chapter.onChapterExit.length > 0) {
+                        chapter.onChapterExit.forEach(setLayerOpacity);
+                    }
+                    if (chapter.callbackExit) {
+                        window[chapter.callbackExit]();
+                    }
+                });
+
+            if (config.auto) {
+                document.querySelectorAll('[data-scrollama-index="0"]')[0].scrollIntoView();
+            }
+
         });
-      }
-      if (config.auto) {
-        var next_chapter = (current_chapter + 1) % config.chapters.length;
-        map.once('moveend', () => {
-          document.querySelectorAll('[data-scrollama-index="' + next_chapter.toString() + '"]')[0].scrollIntoView();
-        });
-      }
-    })
-    .onStepExit(response => {
-      var chapter = config.chapters.find(chap => chap.id === response.element.id);
-      response.element.classList.remove('active');
-      if (chapter.onChapterExit.length > 0) {
-        chapter.onChapterExit.forEach(setLayerOpacity);
-      }
-      if (chapter.callbackExit) {
-        window[chapter.callbackExit]();
-      }
-    });
-
-  if (config.auto) {
-    document.querySelectorAll('[data-scrollama-index="0"]')[0].scrollIntoView();
-  }
-
-});
-// <-- un único cierre del map.on("load", ...)
-
+        // <-- un único cierre del map.on("load", ...)
     </script>
 
 </body>
