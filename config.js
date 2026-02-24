@@ -18,7 +18,7 @@ var config = {
     title: 'Gigantes de agua en Extremadura',
     subtitle: 'Embalses del sistema Guadiana-Zújar',
     //byline: 'Fernando Miranda',
-    footer: 'Source: source citations, etc. <br> Created using <a href="https://github.com/mapbox/storytelling" target="_blank">Mapbox Storytelling</a> template.',
+    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: autores indicados en cada recurso (uso educativo).<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
     chapters: [
   {
   id: 'introduccion',
@@ -154,7 +154,7 @@ var config = {
     <p>Juntos ayudan a gestionar recursos hídricos para abastecimiento, riego y estabilidad de caudales aguas abajo.</p>
   `,
   location: {
-    center: [-5.47504205, 38.916],
+    center: [-5.47504205, 38.88516],
     zoom: 13,
     pitch: 45,
     bearing: -10
@@ -168,5 +168,33 @@ var config = {
   ],
   onChapterExit: []
 }
+,
+{
+  id: 'explorar',
+  alignment: 'left',
+  hidden: false,
+  title: 'Explora el mapa',
+  image: './assets/serena.jpg',
+  imageAlt: 'Vista panorámica del embalse de La Serena',
+  description: `
+    <p>Ahora puedes explorar libremente: zoom, rotación, búsqueda y filtros por río y capacidad.</p>
+    <p>Consejo: usa el buscador para saltar a un embalse y abre su ficha con el popup.</p>
+  `,
+  location: {
+    center: [-5.414837, 39.219733],
+    zoom: 9,
+    pitch: 0,
+    bearing: 0
+  },
+  mapAnimation: 'flyTo',
+  rotateAnimation: false,
+  callback: 'enableExploreMode',
+  callbackExit: 'disableExploreMode',
+  onChapterEnter: [
+    { layer: 'embalses-labels', opacity: 1 }
+  ],
+  onChapterExit: []
+}
+
 ]
 };
