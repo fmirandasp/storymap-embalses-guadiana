@@ -553,36 +553,8 @@ document.body.appendChild(progress);
       return embalsesData;
     }
 
-    // CSV: parseo simple de ; con comas decimales
-return rows;
-    }
-// Semana ISO (1..53): útil para gráficos semanales tipo embalses.net
-// Carga el CSV de series temporales (en /embalses_capacidad.csv)
-    async function loadCapacidadCSV() {
-      if (csvCache) return csvCache;
-      const res = await fetch('data/embalses_capacidad.csv'); // archivo subido al proyecto
-      const txt = await res.text();
-      const rows = parseCSVSemicolon(txt);
+    // (CSV eliminado: se usa Flourish para el gráfico temporal)
 
-      // Normalizamos campos clave y convertimos a números/fechas
-      csvCache = rows.map(r => {
-        const date = parseSpanishDateDMY(r.FECHA);
-        const yw = date ? isoWeekYear(date) : null;
-        return {
-          ambito: r.AMBITO_NOMBRE,
-          embalse: r.EMBALSE_NOMBRE,
-          fecha: date,
-          isoYear: yw ? yw.isoYear : null,
-          isoWeek: yw ? yw.isoWeek : null,
-          agua_total: toNumberCommaDecimal(r.AGUA_TOTAL),
-          agua_actual: toNumberCommaDecimal(r.AGUA_ACTUAL)
-        };
-      }).filter(r => r.fecha && r.isoWeek && r.isoYear);
-
-      return csvCache;
-    }
-
-    /*
       ==========================================================
       7) HIGHLIGHT + POPUPS (mapa)
       ==========================================================
@@ -792,16 +764,6 @@ return rows;
     }
 
     // Mini gráfico por embalse (últimos 6 años)
-    async function renderMiniEmbalseChart(embalseName) {
-      const canvas = document.getElementById('chart-embalse-mini');
-      if (!canvas) return;
-
-      const rows = await loadCapacidadCSV();
-      const scoped = rows.filter(r => r.embalse === embalseName);
-
-      if (!scoped.length) {
-return;
-      }
 
       // Agrupamos por (año, semana) -> valor (agua_actual)
       const years = Array.from(new Set(scoped.map(r => r.isoYear))).sort((a,b)=>a-b);
@@ -870,8 +832,6 @@ return;
         map.setPaintProperty('embalses-points', 'circle-stroke-opacity', 1);
       }
       if (map.getLayer('embalses-labels')) map.setPaintProperty('embalses-labels', 'text-opacity', 1);
-
-      const hint = document.getElementById('miniChartHint');
       if (hint) hint.textContent = 'Selecciona un embalse en el buscador para ver su evolución.';
     };
 
