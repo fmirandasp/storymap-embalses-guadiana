@@ -42,6 +42,35 @@ var config = {
   ],
   onChapterExit: [  ]
 },
+{
+  id: 'evolucion_flourish',
+  alignment: 'center',
+  hidden: false,
+  title: 'Evolución del agua embalsada (Flourish)',
+  description: `
+    <p>Gráfico interactivo creado con Flourish Studio. Puedes explorar valores y comparar series directamente.</p>
+
+    <div class="flourish-embed flourish-chart" data-src="visualisation/27766133">
+      <script src="https://public.flourish.studio/resources/embed.js"></script>
+      <noscript>
+        <img src="https://public.flourish.studio/visualisation/27766133/thumbnail" width="100%" alt="visualization" />
+      </noscript>
+    </div>
+  `,
+  location: {
+    center: [-5.2, 39.0],
+    zoom: 7.2,
+    pitch: 0,
+    bearing: 0
+  },
+  mapAnimation: 'flyTo',
+  rotateAnimation: false,
+  onChapterEnter: [
+    { layer: 'embalses-labels', opacity: 1 }
+  ],
+  onChapterExit: []
+},
+
 
 {
   id: 'cijara',
