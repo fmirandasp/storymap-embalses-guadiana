@@ -263,7 +263,7 @@
     */
     .chart-wrap{
       margin-top: 12px;
-      border-radius: 8px;
+      border-radius: 14px;
       overflow: hidden;
       background: rgba(255,255,255,.92);
       box-shadow: 0 10px 30px rgba(0,0,0,.18);
@@ -279,6 +279,44 @@
       height: 360px !important;
       display: block;
     }
+  
+    /* ===== Tabs del gráfico (selección de embalse) =====
+       - Botones “pill” en la parte superior del gráfico
+       - Mantiene un estilo editorial y limpio
+    */
+    .chart-tabs{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0 10px 0;
+    }
+    .chart-tab{
+      border: 1px solid rgba(0,0,0,.10);
+      background: rgba(0,0,0,.04);
+      color: rgba(0,0,0,.78);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .chart-tab:hover{
+      background: rgba(0,0,0,.06);
+      border-color: rgba(0,0,0,.14);
+    }
+    .chart-tab[aria-selected="true"]{
+      background: rgba(0,119,182,.10);
+      border-color: rgba(0,119,182,.25);
+      color: rgba(0,60,90,.95);
+      font-weight: 600;
+    }
+    .chart-subtitle{
+      font-size: 12px;
+      opacity: .82;
+      margin: 0 0 4px 0;
+    }
+
   </style>
 </head>
 
@@ -368,7 +406,9 @@
         description: `
           <p>Antes de entrar en cada embalse, vemos el pulso semanal del sistema (líneas por año y una referencia de la última década).</p>
           <div class="chart-wrap">
-            <div class="chart-title">Lectura: líneas finas para años recientes + media 10 años en trazo discontinuo (hm³, semanal).</div>
+            <div class="chart-title">Elige un embalse: al pulsar en su nombre, el gráfico se actualiza (hm³, semanal).</div>
+            <div id="embalse-tabs" class="chart-tabs" role="tablist" aria-label="Embalses"></div>
+            <div id="embalse-selected" class="chart-subtitle"></div>
             <canvas id="chart-evolucion" aria-label="Gráfico de evolución semanal" role="img"></canvas>
           </div>
         `,
@@ -588,6 +628,8 @@
           <div class="muted" style="margin-left:auto" id="countLabel"></div>
         </div>
 
+                <label style="margin-top:10px; display:flex; align-items:center; gap:8px;"><input id="toggleHeatmap" type="checkbox" style="width:auto; margin:0;" /><span>Ver densidad (heatmap)</span></label>
+
         <button id="resetFilters" type="button">Restablecer filtros</button>
       `;
 
@@ -676,16 +718,19 @@
     }
 
     // Semana ISO (1..53): útil para gráficos semanales tipo embalses.net
-    function isoWeek(d) {
+    function isoWeekYear(d) {
       const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-      // jueves de esta semana determina el año ISO
       const dayNum = (date.getUTCDay() + 6) % 7; // lunes=0
-      date.setUTCDate(date.getUTCDate() - dayNum + 3);
-      const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+      date.setUTCDate(date.getUTCDate() - dayNum + 3); // mover a jueves
+
+      const isoYear = date.getUTCFullYear();
+
+      const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
       const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
       firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
-      const week = 1 + Math.round((date - firstThursday) / (7 * 24 * 3600 * 1000));
-      return week;
+
+      const isoWeek = 1 + Math.round((date - firstThursday) / (7 * 24 * 3600 * 1000));
+      return { isoYear, isoWeek };
     }
 
     function toNumberCommaDecimal(v) {
@@ -698,23 +743,24 @@
     // Carga el CSV de series temporales (en /embalses_capacidad.csv)
     async function loadCapacidadCSV() {
       if (csvCache) return csvCache;
-      const res = await fetch('./data/embalses_capacidad.csv'); // archivo subido al proyecto
+      const res = await fetch('data/embalses_capacidad.csv'); // archivo subido al proyecto
       const txt = await res.text();
       const rows = parseCSVSemicolon(txt);
 
       // Normalizamos campos clave y convertimos a números/fechas
       csvCache = rows.map(r => {
         const date = parseSpanishDateDMY(r.FECHA);
+        const yw = date ? isoWeekYear(date) : null;
         return {
           ambito: r.AMBITO_NOMBRE,
           embalse: r.EMBALSE_NOMBRE,
           fecha: date,
-          year: date ? date.getUTCFullYear() : null,
-          week: date ? isoWeek(date) : null,
+          isoYear: yw ? yw.isoYear : null,
+          isoWeek: yw ? yw.isoWeek : null,
           agua_total: toNumberCommaDecimal(r.AGUA_TOTAL),
           agua_actual: toNumberCommaDecimal(r.AGUA_ACTUAL)
         };
-      }).filter(r => r.fecha && r.week && r.year);
+      }).filter(r => r.fecha && r.isoWeek && r.isoYear);
 
       return csvCache;
     }
@@ -845,124 +891,176 @@
       - “Toque diferente”: líneas suaves, poca tinta, leyenda compacta,
         tooltip limpio y una media 10 años discontinua.
     */
+    
     window.renderEvolutionChart = async function () {
-      // Evita recrear el gráfico si ya existe
-      if (chartEvolucion) return;
+      /*
+        Este gráfico es “por embalse”: muestra una serie semanal para el embalse elegido (tabs).
+        - Media (hasta 10 años previos) en línea discontinua
+        - Últimos 3 años disponibles como líneas continuas (estilo editorial)
+      */
 
       const canvas = document.getElementById('chart-evolucion');
-      if (!canvas) return;
+      const tabsEl = document.getElementById('embalse-tabs');
+      const selectedEl = document.getElementById('embalse-selected');
 
+      if (!canvas || !tabsEl) return;
+
+      // Lista de embalses protagonistas del storytelling (coherente con narrativa)
+      const embalsesHistoria = ['Cíjara', 'García de Sola', 'Orellana', 'La Serena', 'Zújar'];
+
+      // Carga CSV (cacheado)
       const rows = await loadCapacidadCSV();
 
-      // Agregación: sumamos agua_actual por semana para el “ámbito” Guadiana (puedes cambiarlo)
-      const scope = 'Guadiana'; // toque editorial: centrado en tu sistema narrativo
-      const scoped = rows.filter(r => r.ambito === scope);
-
-      // Determinamos años disponibles y elegimos los 3 más recientes
-      const years = Array.from(new Set(scoped.map(r => r.year))).sort((a,b)=>a-b);
-      const recentYears = years.slice(-3); // últimos 3 años en dataset
-      const lastYear = recentYears[recentYears.length - 1];
-
-      // Para la media 10 años: tomamos los 10 años anteriores al último (o los que haya)
-      const avgYears = years.filter(y => y < lastYear).slice(-10);
-
-      // Helper: suma por (year, week)
-      const sumByYearWeek = new Map(); // key: `${year}-${week}` -> sum
-      for (const r of scoped) {
-        const key = `${r.year}-${r.week}`;
-        const prev = sumByYearWeek.get(key) || 0;
-        sumByYearWeek.set(key, prev + (r.agua_actual || 0));
+      // Helper: años disponibles para un embalse
+      function yearsForEmbalse(name){
+        return Array.from(new Set(rows.filter(r => r.embalse === name).map(r => r.isoYear))).sort((a,b)=>a-b);
       }
 
-      // Construimos serie por semanas 1..53
+      // Prepara tabs (una sola vez)
+      if (!tabsEl.dataset.built) {
+        tabsEl.dataset.built = "1";
+        tabsEl.innerHTML = '';
+
+        embalsesHistoria.forEach((name, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chart-tab';
+          btn.setAttribute('role', 'tab');
+          btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+          btn.textContent = name;
+
+          btn.addEventListener('click', () => {
+            Array.from(tabsEl.querySelectorAll('.chart-tab')).forEach(b => b.setAttribute('aria-selected','false'));
+            btn.setAttribute('aria-selected','true');
+            updateChartForEmbalse(name);
+          });
+
+          tabsEl.appendChild(btn);
+        });
+      }
+
       const weeks = Array.from({length: 53}, (_,i)=>i+1);
 
-      function seriesForYear(y) {
+      // Serie semanal (year) para un embalse
+      function seriesForEmbalseYear(name, y) {
+        const mapYW = new Map();
+        rows.filter(r => r.embalse === name && r.isoYear === y).forEach(r => {
+          const key = `${r.isoYear}-${r.isoWeek}`;
+          mapYW.set(key, (mapYW.get(key) || 0) + (r.agua_actual || 0));
+        });
+
         return weeks.map(w => {
-          const key = `${y}-${w}`;
-          const v = sumByYearWeek.get(key);
+          const v = mapYW.get(`${y}-${w}`);
           return (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
         });
       }
 
-      // Media 10 años (por semana): promedio de años disponibles en avgYears
-      const avg10 = weeks.map(w => {
-        let acc = 0, n = 0;
-        for (const y of avgYears) {
-          const v = sumByYearWeek.get(`${y}-${w}`);
-          if (typeof v === 'number' && isFinite(v) && v > 0) { acc += v; n++; }
-        }
-        return n ? (acc / n) : null;
-      });
+      // Media (hasta 10 años previos) por semana
+      function avgForEmbalse(name, years) {
+        const mapYW = new Map();
+        rows.filter(r => r.embalse === name).forEach(r => {
+          const key = `${r.isoYear}-${r.isoWeek}`;
+          mapYW.set(key, (mapYW.get(key) || 0) + (r.agua_actual || 0));
+        });
 
-      // Estética: no copiamos exactamente embalses.net; usamos un look “editorial” más limpio
-      const datasets = [];
+        return weeks.map(w => {
+          let acc = 0, n = 0;
+          for (const y of years) {
+            const v = mapYW.get(`${y}-${w}`);
+            if (typeof v === 'number' && isFinite(v) && v > 0) { acc += v; n++; }
+          }
+          return n ? (acc / n) : null;
+        });
+      }
 
-      // Media (discontinua)
-      datasets.push({
-        label: `Media ${avgYears.length} años`,
-        data: avg10,
-        borderColor: 'rgba(0,0,0,0.55)',
-        borderWidth: 2,
-        borderDash: [6, 6],
-        pointRadius: 0,
-        tension: 0.25
-      });
-
-      // Años recientes (líneas suaves, finas)
+      // Paleta editorial (toque diferente al ejemplo)
       const palette = [
-        'rgba(0,119,182,0.92)',  // azul
-        'rgba(32,201,151,0.90)', // verde agua
-        'rgba(255,183,3,0.92)'   // dorado
+        'rgba(0,119,182,0.92)',
+        'rgba(32,201,151,0.90)',
+        'rgba(255,183,3,0.92)'
       ];
 
-      recentYears.forEach((y, i) => {
+      function updateChartForEmbalse(name){
+        const years = yearsForEmbalse(name);
+        if (!years.length) {
+          if (selectedEl) selectedEl.textContent = `No hay datos en el CSV para: ${name}`;
+          return;
+        }
+
+        const recentYears = years.slice(-3);
+        const lastYear = recentYears[recentYears.length - 1];
+        const avgYears = years.filter(y => y < lastYear).slice(-10);
+
+        const datasets = [];
+
         datasets.push({
-          label: String(y),
-          data: seriesForYear(y),
-          borderColor: palette[i % palette.length],
+          label: `Media ${avgYears.length || 0} años`,
+          data: avgYears.length ? avgForEmbalse(name, avgYears) : weeks.map(_=>null),
+          borderColor: 'rgba(0,0,0,0.55)',
           borderWidth: 2,
+          borderDash: [6, 6],
           pointRadius: 0,
           tension: 0.25
         });
-      });
 
-      chartEvolucion = new Chart(canvas, {
-        type: 'line',
-        data: { labels: weeks.map(w => String(w)), datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'line' }
-            },
-            tooltip: {
-              callbacks: {
-                title: (items) => `Semana ${items?.[0]?.label ?? ''}`,
-                label: (ctx) => {
-                  const v = ctx.parsed.y;
-                  if (v == null) return `${ctx.dataset.label}: —`;
-                  return `${ctx.dataset.label}: ${Math.round(v).toLocaleString('es-ES')} hm³`;
+        recentYears.forEach((y, i) => {
+          datasets.push({
+            label: String(y),
+            data: seriesForEmbalseYear(name, y),
+            borderColor: palette[i % palette.length],
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.25
+          });
+        });
+
+        if (selectedEl) {
+          selectedEl.textContent =
+            `Embalse seleccionado: ${name} · Comparativa semanal por años (cada línea es un año; no es serie continua entre años).`;
+        }
+
+        if (!chartEvolucion) {
+          chartEvolucion = new Chart(canvas, {
+            type: 'line',
+            data: { labels: weeks.map(w => String(w)), datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'line' }
+                },
+                tooltip: {
+                  callbacks: {
+                    title: (items) => `Semana ${items?.[0]?.label ?? ''}`,
+                    label: (ctx) => {
+                      const v = ctx.parsed.y;
+                      if (v == null) return `${ctx.dataset.label}: —`;
+                      return `${ctx.dataset.label}: ${Math.round(v).toLocaleString('es-ES')} hm³`;
+                    }
+                  }
                 }
+              },
+              scales: {
+                x: { title: { display: true, text: 'Semana del año' }, grid: { display: false } },
+                y: { title: { display: true, text: 'hm³' }, grid: { color: 'rgba(0,0,0,0.08)' } }
               }
             }
-          },
-          scales: {
-            x: {
-              title: { display: true, text: 'Semana del año' },
-              grid: { display: false }
-            },
-            y: {
-              title: { display: true, text: 'hm³ (suma ámbito)' },
-              grid: { color: 'rgba(0,0,0,0.08)' }
-            }
-          }
+          });
+        } else {
+          chartEvolucion.data.datasets = datasets;
+          chartEvolucion.update();
         }
-      });
+      }
+
+      // Selección por defecto: el tab marcado (o el primero)
+      const currentSelectedBtn = tabsEl.querySelector('.chart-tab[aria-selected="true"]');
+      const currentSelected = currentSelectedBtn ? currentSelectedBtn.textContent : null;
+      updateChartForEmbalse(currentSelected || embalsesHistoria[0]);
     };
+
 
     /*
       ==========================================================
@@ -1061,13 +1159,13 @@
       }
 
       // Agrupamos por (año, semana) -> valor (agua_actual)
-      const years = Array.from(new Set(scoped.map(r => r.year))).sort((a,b)=>a-b);
+      const years = Array.from(new Set(scoped.map(r => r.isoYear))).sort((a,b)=>a-b);
       const recent = years.slice(-6);
       const weeks = Array.from({length: 53}, (_,i)=>i+1);
 
       const mapYW = new Map();
       for (const r of scoped) {
-        mapYW.set(`${r.year}-${r.week}`, (mapYW.get(`${r.year}-${r.week}`) || 0) + (r.agua_actual || 0));
+        mapYW.set(`${r.isoYear}-${r.isoWeek}`, (mapYW.get(`${r.isoYear}-${r.isoWeek}`) || 0) + (r.agua_actual || 0));
       }
 
       const datasets = recent.map((y, idx) => {
@@ -1178,6 +1276,17 @@
           closeEmbalsePopup();
           document.getElementById('miniChartHint').textContent = 'Selecciona un embalse en el buscador para ver su evolución.';
           if (chartEmbalseMini) { chartEmbalseMini.destroy(); chartEmbalseMini = null; }
+
+      // Resetea heatmap y opacidades
+      const toggleHeatmap = document.getElementById('toggleHeatmap');
+      if (toggleHeatmap) toggleHeatmap.checked = false;
+      if (map.getLayer('embalses-heat')) map.setLayoutProperty('embalses-heat', 'visibility', 'none');
+      if (map.getLayer('embalses-points')) {
+        map.setPaintProperty('embalses-points', 'circle-opacity', 1);
+        map.setPaintProperty('embalses-points', 'circle-stroke-opacity', 1);
+      }
+      if (map.getLayer('embalses-labels')) map.setPaintProperty('embalses-labels', 'text-opacity', 1);
+
         });
       }
     }
@@ -1202,6 +1311,17 @@
       if (map.getLayer('embalses-labels')) map.setFilter('embalses-labels', null);
 
       if (chartEmbalseMini) { chartEmbalseMini.destroy(); chartEmbalseMini = null; }
+
+      // Resetea heatmap y opacidades
+      const toggleHeatmap = document.getElementById('toggleHeatmap');
+      if (toggleHeatmap) toggleHeatmap.checked = false;
+      if (map.getLayer('embalses-heat')) map.setLayoutProperty('embalses-heat', 'visibility', 'none');
+      if (map.getLayer('embalses-points')) {
+        map.setPaintProperty('embalses-points', 'circle-opacity', 1);
+        map.setPaintProperty('embalses-points', 'circle-stroke-opacity', 1);
+      }
+      if (map.getLayer('embalses-labels')) map.setPaintProperty('embalses-labels', 'text-opacity', 1);
+
       const hint = document.getElementById('miniChartHint');
       if (hint) hint.textContent = 'Selecciona un embalse en el buscador para ver su evolución.';
     };
