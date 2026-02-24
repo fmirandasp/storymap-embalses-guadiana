@@ -308,6 +308,39 @@
                 bottom: 10px;
             }
         }
+
+        /* Ajuste de ancho del Flourish (capítulo #grafico-evolucion) */
+        #grafico-evolucion .flourish-embed {
+            max-width: 1100px;   /* prueba 1000–1200 según te guste */
+            margin: 0 auto;      /* centra */
+        }
+
+        /* En pantallas grandes, un pelín de aire lateral */
+        @media (min-width: 900px) {
+        #grafico-evolucion .flourish-embed {
+            padding: 0 16px;   /* reduce la sensación "a sangre" */
+            box-sizing: border-box;
+            }
+        }
+
+        /* Ajuste de ancho del Flourish (capítulo #grafico-sunburst) */
+        #grafico-sunburst .flourish-embed {
+            max-width: 700px;   /* prueba 1000–1200 según te guste */
+            margin: 0 auto;      /* centra */
+        }
+
+        /* En pantallas grandes, un pelín de aire lateral */
+        @media (min-width: 900px) {
+        #grafico-sunburst .flourish-embed {
+            padding: 0 16px;   /* reduce la sensación "a sangre" */
+            box-sizing: border-box;
+            }
+        }
+
+
+
+
+
     </style>
 </head>
 

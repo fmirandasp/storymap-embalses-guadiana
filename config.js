@@ -29,7 +29,7 @@ var config = {
   description: `
     <p>Extremadura alberga algunos de los mayores embalses de Europa.</p>
     <p>Desde el año 2000, su evolución refleja periodos de abundancia y sequía que han marcado el territorio.</p>
-    <p>En esta historia interactiva exploraremos cómo han cambiado los principales embalses del sistema Guadiana-Zújar.</p>
+    <p>En esta historia interactiva exploraremos los principales embalses del sistema Guadiana-Zújar y veremos un gráfico con la evolución de la capacidad de los últimos 25 años.</p>
   `,
   location: {
     center: [-5.414837, 39.219733],
@@ -45,12 +45,12 @@ var config = {
 
 /* ===== NUEVO CAPÍTULO (Flourish) ===== */
 {
-  id: 'grafico',
+  id: 'grafico-evolucion',
   alignment: 'full',
   hidden: false,
-  title: 'Evolución semanal (visualización)',
+  title: 'Evolución de la capacidad de los embalses',
   description: `
-    <p>Antes de entrar embalse por embalse, mira la evolución semanal agregada.</p>
+    <p>Veamos la evolución en los últimos 25 años. Selecciona cada embalse para ver su evolución individual.</p>
 
     <div class="flourish-embed flourish-chart" data-src="visualisation/27766133">
       <noscript>
@@ -72,6 +72,29 @@ var config = {
   onChapterExit: []
 },
 
+{
+  id: 'grafico-sunburst',
+  alignment: 'full',
+  hidden: false,
+  title: 'Capacidad máxima de los embalses',
+  description: `
+    <p>Volumen máximo de cada embalse en el sistema Guadiana-Zújar. Pincha en el gráfico para ver su capacidad individual.</p>
+
+    <div class="flourish-embed flourish-chart" data-src="visualisation/27781909"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/27781909/thumbnail" width="100%" alt="visualization" /></noscript></div>
+  `,
+  location: {
+    center: [-5.414837, 39.219733],
+    zoom: 9,
+    pitch: 0,
+    bearing: 0
+  },
+  mapAnimation: 'flyTo',
+  rotateAnimation: false,
+  onChapterEnter: [
+    { layer: 'embalses-labels', opacity: 1 }
+  ],
+  onChapterExit: []
+},
 {
   id: 'cijara',
   alignment: 'right',
@@ -174,7 +197,7 @@ var config = {
 },
 {
   id: 'zujar',
-  alignment: 'left',
+  alignment: 'right',
   hidden: false,
   title: 'Embalse del Zújar',
   image: './assets/zujar.jpg',
@@ -183,7 +206,7 @@ var config = {
     <p>Juntos ayudan a gestionar recursos hídricos para abastecimiento, riego y estabilidad de caudales aguas abajo.</p>
   `,
   location: {
-    center: [-5.47504205, 38.88516],
+    center: [-5.41504205, 38.8998516],
     zoom: 13,
     pitch: 45,
     bearing: -10
@@ -203,11 +226,10 @@ var config = {
   alignment: 'left',
   hidden: false,
   title: 'Explora el mapa',
-  image: './assets/serena.jpg',
-  imageAlt: 'Vista panorámica del embalse de La Serena',
+  /*image: './assets/serena.jpg',
+  imageAlt: 'Vista panorámica del embalse de La Serena',*/
   description: `
-    <p>Ahora puedes explorar libremente: zoom, rotación, búsqueda y filtros por río y capacidad.</p>
-    <p>Consejo: usa el buscador para saltar a un embalse y abre su ficha con el popup.</p>
+    <p>Ahora puedes explorar libremente: zoom, rotación, búsqueda y filtros por río y capacidad. Consejo: usa el buscador para saltar a un embalse y abre su ficha con el popup.</p>
   `,
   location: {
     center: [-5.414837, 39.219733],
