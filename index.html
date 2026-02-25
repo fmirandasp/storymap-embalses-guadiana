@@ -4,7 +4,7 @@
 <head>
     <meta charset='utf-8' />
     <title>Mapbox Storytelling</title>
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <link rel="icon" type="image/x-icon"
         href="https://raw.githubusercontent.com/mapbox/assembly/publisher-staging/src/svgs/mapbox.svg">
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js'></script>
@@ -22,18 +22,24 @@
             font-family: sans-serif;
         }
 
-        a,
+        
+        img { max-width: 100%; height: auto; }
+a,
         a:hover,
         a:visited {
             color: #0071bc;
         }
 
         #map {
-            top: 0;
-            height: 100vh;
-            width: 100vw;
+top: 0;
+
+                        height: 100vh;
+            height: 100svh;
+            height: 100dvh;
+width: 100vw;
             position: fixed;
         }
+
 
         #header {
             width: 100%;
@@ -47,6 +53,21 @@
             padding: 28px 40px;
             gap: 24px;
         }
+
+
+        /* Header assets */
+        #header .logo{
+            max-height: 64px;
+            width: auto;
+            height: auto;
+        }
+        #header .header-text{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
 
         #header h1,
         #header h2,
@@ -354,7 +375,45 @@
 
 
 
-    </style>
+    
+
+        @media (max-width: 750px) {
+            #header{
+                flex-direction: column;
+                padding: 16px 14px;
+                gap: 10px;
+            }
+
+            #header h1,
+            #header h2,
+            #header p{
+                padding: 0;
+                text-align: center;
+            }
+
+            #header h1{ font-size: 22px; }
+            #header h2{ font-size: 16px; }
+
+            #header .logo{
+                max-width: 140px;
+                width: 60vw;
+                max-height: none;
+            }
+
+            .step div{
+                padding: 16px 16px;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            /* Slightly smaller map viewport on mobile to leave room for header and content */
+            #map{
+                height: 55svh;
+                height: 55dvh;
+            }
+        }
+
+</style>
 </head>
 
 <body>
@@ -508,6 +567,11 @@
             interactive: true,
             projection: config.projection
         });
+
+        // Ensure the map reflows correctly on mobile orientation changes / resizes
+        window.addEventListener("resize", () => map.resize());
+        window.addEventListener("orientationchange", () => setTimeout(() => map.resize(), 200));
+
         // ===== Interacción: habilitada pero desactivada por defecto (se activa en "modo exploración") =====
         function disableMapInteractions() {
             map.scrollZoom.disable();
