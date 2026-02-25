@@ -94,7 +94,33 @@ var config = {
     { layer: 'embalses-labels', opacity: 1 }
   ],
   onChapterExit: []
+      },
+
+{
+  id: 'grafico-mapa',
+  alignment: 'full',
+  hidden: false,
+  title: 'Mapa de los embalses',
+  description: `
+    <p>Pasando por encima de cada embalse se muestra información relevante.</p>
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/27795837"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/27795837/thumbnail" width="100%" alt="visualization" /></noscript></div>
+  `,
+  location: {
+    center: [-5.414837, 39.219733],
+    zoom: 9,
+    pitch: 0,
+    bearing: 0
+  },
+  mapAnimation: 'flyTo',
+  rotateAnimation: false,
+  onChapterEnter: [
+    { layer: 'embalses-labels', opacity: 1 }
+  ],
+  onChapterExit: []
 },
+
+
 {
   id: 'cijara',
   alignment: 'right',
@@ -106,7 +132,7 @@ var config = {
     <p>Con una capacidad aproximada de 1.505 hm³, desempeña un papel clave en el abastecimiento, el riego y la producción hidroeléctrica.</p>
   `,
   location: {
-    center: [-4.70398689, 39.300898],
+    center: [-4.720398689, 39.300898],
     zoom: 11,
     pitch: 45,
     bearing: -10
@@ -131,7 +157,7 @@ var config = {
     <p>Además de almacenar agua, tiene un papel importante en la generación hidroeléctrica y en la gestión de caudales aguas abajo.</p>
   `,
   location: {
-    center: [-5.1579908,          39.1939608],
+    center: [-5.17579908,          39.1939608],
     zoom: 11.3,
     pitch: 45,
     bearing: -10

@@ -103,8 +103,8 @@
         }
 
         .dark {
-            color: oklch(20.047% 0.1042 271.302);
-            background: linear-gradient(90deg, #c0d4e7, #0077b6);
+            color: oklch(18.537% 0.1071 270.22);
+            background: linear-gradient(90deg, #c0d4e7, #4c7dd8);
         }
 
         .step {
@@ -337,6 +337,19 @@
             }
         }
 
+        /* Ajuste de ancho del Flourish (capítulo #grafico-mapa) */
+        #grafico-mapa .flourish-embed {
+            max-width: 700px;   /* prueba 1000–1200 según te guste */
+            margin: 0 auto;      /* centra */
+        }
+
+        /* En pantallas grandes, un pelín de aire lateral */
+        @media (min-width: 900px) {
+        #grafico-sunburst .flourish-embed {
+            padding: 0 16px;   /* reduce la sensación "a sangre" */
+            box-sizing: border-box;
+            }
+        }
 
 
 
