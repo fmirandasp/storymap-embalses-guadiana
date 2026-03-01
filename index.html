@@ -1,783 +1,1731 @@
 <!DOCTYPE html>
-<html>
+<!--
+  index.html (scrollytelling + Mapbox + gráficos)
+  ------------------------------------------------
+  Este documento combina:
+  - HTML: estructura (contenedores del mapa y de la historia)
+  - CSS: presentación (layout, responsive, paneles)
+  - JavaScript: lógica (Mapbox GL JS, Scrollama, UI y gráficos con Chart.js)
 
+  NOTA: Las anotaciones (comentarios) NO afectan al funcionamiento.
+-->
+<html lang="es">
 <head>
-    <meta charset='utf-8' />
-    <title>Mapbox Storytelling</title>
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <link rel="icon" type="image/x-icon"
+  <!-- ========= METADATOS BÁSICOS ========= -->
+  <meta charset="utf-8" />
+  <title>Gigantes de agua en Extremadura</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <!-- ========= ICONO (FAVICON) ========= -->
+  <link rel="icon" type="image/x-icon"
         href="https://raw.githubusercontent.com/mapbox/assembly/publisher-staging/src/svgs/mapbox.svg">
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css' rel='stylesheet' />
-    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-globe-minimap@1.2.0/dist/bundle.js"></script>
-    <script src="https://unpkg.com/scrollama"></script>
-        <!-- Flourish: cargar UNA vez para que los embeds funcionen -->
-    <script src="https://public.flourish.studio/resources/embed.js" defer></script>
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: sans-serif;
-        }
+  <!-- ========= LIBRERÍAS EXTERNAS ========= -->
+  <!-- Mapbox GL JS: motor de mapas vectoriales (renderiza con WebGL) -->
+  <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
+  <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css" rel="stylesheet" />
 
-        a,
-        a:hover,
-        a:visited {
-            color: #0071bc;
-        }
+  <!-- Minimap/globo (inset) -->
+  <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-globe-minimap@1.2.0/dist/bundle.js"></script>
 
-        #map {
-            top: 0;
-            height: 100vh;
-            width: 100vw;
-            position: fixed;
-        }
+  <!-- Scrollama: “orquestador” del scrollytelling (dispara callbacks al entrar/salir de capítulos) -->
+  <script src="https://unpkg.com/scrollama"></script>
 
-/* =====================================================
-   CAMBIO (DESAFIO 2): HEADER EN DOS COLUMNAS CON LOGO
-   ===================================================== */
-#header {
-    margin: auto;
-    width: 100%;
-    position: relative;
-    z-index: 5;
+  <!-- Chart.js: gráficos elegantes (líneas, leyendas, tooltips). Se ejecuta en el navegador. -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    display: flex;               /* Dos columnas */
-    align-items: center;         /* Centrado vertical */
-    justify-content: center;     /* Centrado horizontal */
-    gap: 100px;                   /* Espacio entre logo y texto */
-    padding: 5px 0;
+  <script src="https://public.flourish.studio/resources/embed.js" defer></script>
+
+
+  <!-- ========= ESTILOS (CSS) ========= -->
+  <style>
+    /*
+      ====== ESTILOS GENERALES ======
+      - Reset básico
+      - Tipografía
+      - Colores por defecto
+    */
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    a, a:hover, a:visited { color: #0071bc; }
+
+    /*
+      ====== MAPA ======
+      El mapa queda “fijo” (position: fixed) y ocupa toda la pantalla.
+      El storytelling (capítulos) se superpone por encima con z-index.
+    */
+    #map {
+      top: 0;
+      height: 100vh;
+      width: 100vw;
+      position: fixed;
+    }
+
+    /*
+      ====== CABECERA (generada por JS) ======
+      El header se crea dinámicamente a partir de config.js.
+      Aquí solo definimos su estilo.
+    */
+    #header {
+      width: 100%;
+      position: relative;
+      z-index: 5;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 28px 40px;
+      gap: 24px;
+    }
+    #header h1, #header h2, #header p {
+      margin: 0;
+      padding: 2vh 2vw;
+      text-align: center;
+    }
+
+    /*
+      ====== PIE (generado por JS) ======
+      Igual que el header: el contenido viene de config.js
+    */
+    #footer {
+      width: 100%;
+      min-height: 5vh;
+      padding-top: 2vh;
+      padding-bottom: 2vh;
+      text-align: center;
+      line-height: 25px;
+      font-size: 13px;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Contenedor de todos los capítulos */
+    #features {
+      padding-top: 10vh;
+      padding-bottom: 10vh;
+    }
+
+    .hidden { visibility: hidden; }
+
+    /*
+      ====== ALINEACIONES DE CAPÍTULOS ======
+      Estas clases se asignan según chapter.alignment en config.js:
+      - centered, lefty, righty, fully
+    */
+    .centered { width: 50vw; margin: 0 auto; }
+    .lefty { width: 33vw; margin-left: 5vw; }
+    .righty { width: 33vw; margin-left: 62vw; }
+    .fully { width: 100%; margin: auto; }
+
+    /*
+      ====== TEMAS (light/dark) ======
+      El tema se elige en config.js (config.theme).
+      Nota: tu “dark” es un gradiente (estilo editorial).
+    */
+    .light { color: #444; background-color: #fafafa; }
+    .dark {
+      color: oklch(20.047% 0.1042 271.302);
+      background: linear-gradient(90deg, #c0d4e7, #0077b6);
+    }
+
+    /*
+      ====== CAPÍTULO (STEP) ======
+      La clase .step representa cada capítulo.
+      Scrollama marca el capítulo activo con .active.
+    */
+    .step {
+      padding-bottom: 50vh;
+      opacity: 0.25;
+    }
+    .step.active { opacity: 0.9; }
+    .step div {
+      padding: 25px 50px;
+      line-height: 25px;
+      font-size: 13px;
+    }
+    .step img { width: 100%; }
+
+    /* Responsive móvil */
+    @media (max-width: 750px) {
+      .centered, .lefty, .righty, .fully { width: 90vw; margin: 0 auto; }
+    }
+
+    /*
+      Fix móvil (Mapbox):
+      Evita que el scroll “se rompa” por la gestión táctil del canvas.
+    */
+    .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan,
+    .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
+      touch-action: unset;
+    }
+
+    /* ===== UI: leyenda / filtros / búsqueda / progreso =====
+       Estos paneles aparecen SOLO en modo exploración (último capítulo). */
+    #map-ui{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 6;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: min(360px, calc(100vw - 24px));
+      pointer-events: none; /* solo los elementos internos capturan clicks */
+    }
+    #map-ui .panel{
+      pointer-events: auto;
+      border-radius: 14px;
+      padding: 12px 12px 10px;
+      background: rgba(10, 10, 10, 0.78);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+    }
+    #map-ui .panel h4{
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      letter-spacing: .2px;
+    }
+
+    #legend .item{ display:flex; align-items:center; gap:10px; margin:6px 0; font-size: 13px;}
+    #legend .swatch{ width:14px; height:14px; border-radius: 999px; border:2px solid rgba(255,255,255,.9); }
+    #legend .swatch.fill{ border-radius: 6px; border:1px solid rgba(255,255,255,.25); }
+
+    #filters label{ display:block; font-size: 12px; opacity:.9; margin-top:8px;}
+    #filters input[type="search"], #filters select{
+      width: 100%;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      padding: 8px 10px;
+      outline: none;
+    }
+    #filters input[type="range"]{ width:100%; margin-top: 8px; }
+    #filters .row{ display:flex; gap:10px; align-items:center; }
+    #filters .muted{ font-size: 12px; opacity: .85; margin-top: 6px; }
+    #filters button{
+      margin-top: 10px;
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      color: #fff;
+      cursor: pointer;
+    }
+    #filters button:hover{ background: rgba(255,255,255,.16); }
+
+    /* Panel extra para gráficos en modo exploración */
+    #chart-panel canvas{
+      width: 100% !important;
+      height: 180px !important;
+      display: block;
+    }
+
+    /* Progreso */
+    #progress.panel{
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      right: auto;
+      width: min(280px, calc(100vw - 24px));
+      z-index: 6;
+    }
+    #progress .bar{
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      overflow:hidden;
+      margin-top: 8px;
+    }
+    #progress .bar > div{
+      height: 100%;
+      width: 0%;
+      background: rgba(255,255,255,.85);
+    }
+    #progress .text{ font-size: 12px; opacity: .9; }
+
+    /* Mostrar/ocultar elementos cuando se activa el modo exploración */
+    body:not(.explore-mode) .explore-only{ display:none; }
+    body.explore-mode .explore-only{ display:block; }
+
+    /* Oculta controles nativos de Mapbox hasta modo exploración */
+    body:not(.explore-mode) .mapboxgl-ctrl-top-right{ display:none; }
+    body:not(.explore-mode) .mapboxgl-ctrl-bottom-right{ display:none; }
+
+    /* Responsive UI */
+    @media (max-width: 640px){
+      #map-ui{ right: 10px; top: 10px; }
+      #progress.panel{ left: 10px; bottom: 10px; }
+    }
+
+    /*
+      ===== BLOQUE GRÁFICO DENTRO DE CAPÍTULOS =====
+      Un contenedor elegante para el gráfico “contexto” (capítulo de evolución).
+    */
+    .chart-wrap{
+      margin-top: 12px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 10px 30px rgba(0,0,0,.18);
+      padding: 10px 12px;
+    }
+    .chart-wrap .chart-title{
+      font-size: 12px;
+      opacity: .85;
+      margin: 2px 0 8px 0;
+    }
+    .chart-wrap canvas{
+      width: 100% !important;
+      height: 360px !important;
+      display: block;
+    }
+  
+    /* ===== Tabs del gráfico (selección de embalse) =====
+       - Botones “pill” en la parte superior del gráfico
+       - Mantiene un estilo editorial y limpio
+    */
+    .chart-tabs{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0 10px 0;
+    }
+    .chart-tab{
+      border: 1px solid rgba(0,0,0,.10);
+      background: rgba(0,0,0,.04);
+      color: rgba(0,0,0,.78);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .chart-tab:hover{
+      background: rgba(0,0,0,.06);
+      border-color: rgba(0,0,0,.14);
+    }
+    .chart-tab[aria-selected="true"]{
+      background: rgba(0,119,182,.10);
+      border-color: rgba(0,119,182,.25);
+      color: rgba(0,60,90,.95);
+      font-weight: 600;
+    }
+    .chart-subtitle{
+      font-size: 12px;
+      opacity: .82;
+      margin: 0 0 4px 0;
+    }
+#map-ui {
+  display: none !important;
 }
+  
+    /* ===== Modal para ampliar imágenes de capítulos ===== */
+    .image-modal{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      background: rgba(0,0,0,0.85);
+      justify-content:center;
+      align-items:center;
+      padding: 2vh 2vw;
+      cursor: zoom-out;
+    }
+    .image-modal.active{ display:flex; }
+    .image-modal img{
+      max-width: 96vw;
+      max-height: 96vh;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.55);
+      background: rgba(255,255,255,0.02);
+    }
+    .capitulo-img{ cursor: zoom-in; }
 
-/* Columna del texto */
-#header-text {
-    text-align: left;
-}
-
-/* Columna del logo */
-#header-logo img {
-    height: 160px;   /* 🔥 AQUÍ CAMBIAS EL TAMAÑO DEL LOGO */
-}
-
-
-/**
-        #header {
-            margin: auto;
-            width: 100%;
-            position: relative;
-            z-index: 5;
-        }
-            */
-
-        #header h1,
-        #header h2,
-        #header p {
-            margin: 0;
-            padding: 2vh 2vw;
-            text-align: center;
-        }
-
-        #footer {
-            width: 100%;
-            min-height: 5vh;
-            padding-top: 2vh;
-            padding-bottom: 2vh;
-            text-align: center;
-            line-height: 25px;
-            font-size: 13px;
-            position: relative;
-            z-index: 5;
-        }
-
-        #features {
-            padding-top: 10vh;
-            padding-bottom: 10vh;
-        }
-
-        .hidden {
-            visibility: hidden;
-        }
-
-        .centered {
-            width: 50vw;
-            margin: 0 auto;
-        }
-
-        .lefty {
-            width: 33vw;
-            margin-left: 5vw;
-        }
-
-        .righty {
-            width: 33vw;
-            margin-left: 62vw;
-        }
-
-        .fully {
-            width: 100%;
-            margin: auto;
-        }
-
-        .light {
-            color: #444;
-            background-color: #fafafa;
-        }
-
-        .dark {
-            color: oklch(18.537% 0.1071 270.22);
-            background: linear-gradient(90deg, #c0d4e7, #4c7dd8);
-        }
-
-        .step {
-            padding-bottom: 50vh;
-            /* margin-bottom: 10vh; */
-            opacity: 0.25;
-        }
-
-        .step.active {
-            opacity: 0.9;
-        }
-
-        .step div {
-            padding: 25px 50px;
-            line-height: 25px;
-            font-size: 13px;
-        }
-
-        .step img {
-            width: 100%;
-        }
-
-        @media (max-width: 750px) {
-
-            .centered,
-            .lefty,
-            .righty,
-            .fully {
-                width: 90vw;
-                margin: 0 auto;
-            }
-        }
-
-        /* Fix issue on mobile browser where scroll breaks  */
-        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan,
-        .mapboxgl-canvas-container.mapboxgl-touch-zoom-rotate.mapboxgl-touch-drag-pan .mapboxgl-canvas {
-            touch-action: unset;
-        }
-
-/* ===== TAMAÑOS PERSONALIZADOS PARA CADA GRÁFICO ===== */
-
-        /* Capítulo 2 */
-        #grafico-evolucion {
-            width: 60vw;
-            margin: 0 auto;
-        }
-
-        /* Capítulo 3 */
-        #grafico-sunburst {
-            width: 45vw;
-            margin: 0 auto;
-        }
-
-        /* Capítulo 4 */
-        #grafico-mapa {
-            width: 50vw;
-            margin: 0 auto;
-        }    
-        
-        
-/* =====================================================
-   CAMBIO (DESAFIO 2): LIGHTBOX DE IMÁGENES DENTRO DEL STORY
-   - Se abre al pinchar en la foto de capítulos "embalse"
-   - Se muestra grande pero sin “salirse del story”
-   ===================================================== */
-
-#story { position: relative; } /* asegura contexto para el overlay */
-
-.story-lightbox {
-    position: fixed;     /* IMPORTANTE: relativo a #story */
-    inset: 0;               /* ocupa solo el área del story */
-    z-index: 9998;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    background: rgba(0,0,0,0.70);
-}
-
-.story-lightbox.is-open { display: flex; }
-
-.story-lightbox__img {
-    max-width: 96%;
-    max-height: 92vh;       /* grande, pero sin desbordar pantalla */
-    border-radius: 14px;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
-}
-
-.story-lightbox__close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 9999;
-    border: 0;
-    border-radius: 10px;
-    padding: 8px 10px;
-    cursor: pointer;
-    background: rgba(255,255,255,0.9);
-    font-size: 14px;
-}
-
-
-/* =====================================================
-   CAMBIO (DESAFIO 2): EN MODO EXPLORAR, DEJAR PASAR LOS EVENTOS AL MAPA
-   - El story “tapa” el mapa: por eso no se puede arrastrar/zoom
-   - Con esta clase, el mapa recibe los eventos del ratón/táctil
-   ===================================================== */
-body.explore-mode #story {
-    pointer-events: none;
-}
-
-body.explore-mode #map {
-    pointer-events: auto;
-}
-
-
-    
-/* =====================================================
-   FIX (DESAFIO 2): en modo explorar, poner el MAPA por encima
-   (z-index) y garantizar que reciba eventos
-   ===================================================== */
-
-/* Estado normal: story por encima, mapa debajo */
-#map { z-index: 0; }
-#story { position: relative; z-index: 5; }
-
-/* Modo explorar: mapa por encima del story */
-body.explore-mode #map { z-index: 10; }
-body.explore-mode #story { z-index: 0; }
-
-/* Además, en modo explorar el story NO captura eventos */
-body.explore-mode #story { pointer-events: none; }
-body.explore-mode #map { pointer-events: auto; }
-
-</style>
+  </style>
 </head>
 
 <body>
+  <!-- ========= CONTENEDORES PRINCIPALES ========= -->
+  <!-- Aquí se dibuja el mapa (Mapbox GL JS renderiza dentro de un canvas interno) -->
+  <div id="map"></div>
 
-    <div id="map"></div>
-    <div id="story"></div>
+  <!-- Aquí se construye la historia (capítulos). Se rellena dinámicamente desde config.js -->
+  <div id="story"></div>
 
-    <script src="./config.js"></script>
-    <script>
-        var initLoad = true;
-        var layerTypes = {
-            'fill': ['fill-opacity'],
-            'line': ['line-opacity'],
-            'circle': ['circle-opacity', 'circle-stroke-opacity'],
-            'symbol': ['icon-opacity', 'text-opacity'],
-            'raster': ['raster-opacity'],
-            'fill-extrusion': ['fill-extrusion-opacity'],
-            'heatmap': ['heatmap-opacity']
-        }
-
-        var alignments = {
-            'left': 'lefty',
-            'center': 'centered',
-            'right': 'righty',
-            'full': 'fully'
-        }
-
-        function getLayerPaintType(layer) {
-            var layerType = map.getLayer(layer).type;
-            return layerTypes[layerType];
-        }
-
-        function setLayerOpacity(layer) {
-            var paintProps = getLayerPaintType(layer.layer);
-            paintProps.forEach(function (prop) {
-                var options = {};
-                if (layer.duration) {
-                    var transitionProp = prop + "-transition";
-                    options = { "duration": layer.duration };
-                    map.setPaintProperty(layer.layer, transitionProp, options);
-                }
-                map.setPaintProperty(layer.layer, prop, layer.opacity, options);
-            });
-        }
-
-        var story = document.getElementById('story');
-        var features = document.createElement('div');
-        features.setAttribute('id', 'features');
+  <!-- ===== Modal para ampliar imágenes (se rellena por JS) ===== -->
+  <div id="imageModal" class="image-modal" aria-hidden="true">
+    <img id="modalImg" src="" alt="">
+  </div>
 
 
+  <!-- ========= CONFIGURACIÓN DEL STORYTELLING ========= -->
+  <script src="./config.js"></script>
 
-        /**
-        var header = document.createElement('div');
+  <!-- ========= SCRIPT PRINCIPAL (JavaScript) ========= -->
+  <script>
+    /*
+      ==========================================================
+      1) UTILIDADES DE LA PLANTILLA (opacidades por tipo de capa)
+      ==========================================================
+      Mapbox usa “layers” de distintos tipos (fill, line, circle...).
+      Este mapeo nos permite ajustar opacidad de forma genérica.
+    */
+    var initLoad = true;
+    var layerTypes = {
+      'fill': ['fill-opacity'],
+      'line': ['line-opacity'],
+      'circle': ['circle-opacity', 'circle-stroke-opacity'],
+      'symbol': ['icon-opacity', 'text-opacity'],
+      'raster': ['raster-opacity'],
+      'fill-extrusion': ['fill-extrusion-opacity'],
+      'heatmap': ['heatmap-opacity']
+    };
 
-        if (config.title) {
-            var titleText = document.createElement('h1');
-            titleText.innerText = config.title;
-            header.appendChild(titleText);
-        }
+    /* Alineaciones del panel de capítulos */
+    var alignments = {
+      'left': 'lefty',
+      'center': 'centered',
+      'right': 'righty',
+      'full': 'fully'
+    };
 
-        if (config.subtitle) {
-            var subtitleText = document.createElement('h2');
-            subtitleText.innerText = config.subtitle;
-            header.appendChild(subtitleText);
-        }
-
-        if (config.byline) {
-            var bylineText = document.createElement('p');
-            bylineText.innerText = config.byline;
-            header.appendChild(bylineText);
-        }
-
-        if (header.innerText.length > 0) {
-            header.classList.add(config.theme);
-            header.setAttribute('id', 'header');
-            story.appendChild(header);
-        }
-*/
-
-        /* =====================================================
-        CAMBIO (DESAFIO 2): HEADER CON LOGO + TEXTO
-        ===================================================== */
-
-        var header = document.createElement('div');
-
-        if (config.title || config.subtitle || config.byline) {
-
-            // Contenedor logo
-            var logoContainer = document.createElement('div');
-            logoContainer.setAttribute('id', 'header-logo');
-
-            var logo = document.createElement('img');
-            logo.src = './assets/LOGO VISUALIZACION DE DATOS.svg';
-            logo.alt = 'Logotipo';
-            logoContainer.appendChild(logo);
-
-            // Contenedor texto
-            var textContainer = document.createElement('div');
-            textContainer.setAttribute('id', 'header-text');
-
-            if (config.title) {
-                var titleText = document.createElement('h1');
-                titleText.innerText = config.title;
-                textContainer.appendChild(titleText);
-            }
-
-            if (config.subtitle) {
-                var subtitleText = document.createElement('h2');
-                subtitleText.innerText = config.subtitle;
-                textContainer.appendChild(subtitleText);
-            }
-
-            if (config.byline) {
-                var bylineText = document.createElement('p');
-                bylineText.innerText = config.byline;
-                textContainer.appendChild(bylineText);
-            }
-
-            header.appendChild(logoContainer);
-            header.appendChild(textContainer);
-
-            header.classList.add(config.theme);
-            header.setAttribute('id', 'header');
-            story.appendChild(header);
-        }
-
-
-        config.chapters.forEach((record, idx) => {
-            var container = document.createElement('div');
-            var chapter = document.createElement('div');
-
-            if (record.title) {
-                var title = document.createElement('h3');
-                title.innerText = record.title;
-                chapter.appendChild(title);
-            }
-
-            if (record.image) {
-                var image = new Image();
-                image.src = record.image;
-                chapter.appendChild(image);
-            }
-
-            if (record.description) {
-                var story = document.createElement('p');
-                story.innerHTML = record.description;
-                chapter.appendChild(story);
-            }
-
-            container.setAttribute('id', record.id);
-            container.classList.add('step');
-            if (idx === 0) {
-                container.classList.add('active');
-            }
-
-            /* CAMBIO (DESAFIO 2): marcar capítulos de embalse para activar lightbox solo ahí */
-if (record.polygonName) {
-    container.classList.add('is-embalse');
-}
-
-            chapter.classList.add(config.theme);
-            container.appendChild(chapter);
-            container.classList.add(alignments[record.alignment] || 'centered');
-            if (record.hidden) {
-                container.classList.add('hidden');
-            }
-            features.appendChild(container);
-        });
-
-        story.appendChild(features);
-
-        /* =====================================================
-   CAMBIO (DESAFIO 2): crear lightbox dentro de #story
-   ===================================================== */
-var lightbox = document.createElement('div');
-lightbox.className = 'story-lightbox';
-lightbox.innerHTML = `
-    <button class="story-lightbox__close" type="button" aria-label="Cerrar">Cerrar ✕</button>
-    <img class="story-lightbox__img" alt="Imagen ampliada">
-`;
-story.appendChild(lightbox);
-
-var lightboxImg = lightbox.querySelector('.story-lightbox__img');
-var lightboxClose = lightbox.querySelector('.story-lightbox__close');
-
-function openLightbox(src, altText) {
-    lightboxImg.src = src;
-    lightboxImg.alt = altText || 'Imagen ampliada';
-    lightbox.classList.add('is-open');
-}
-
-function closeLightbox() {
-    lightbox.classList.remove('is-open');
-    lightboxImg.src = '';
-}
-
-/* CAMBIO (DESAFIO 2): solo activar en imágenes de capítulos embalse */
-story.addEventListener('click', function (e) {
-    const img = e.target.closest('.step.is-embalse img');
-    if (!img) return;
-
-    // abre la misma imagen a gran tamaño
-    openLightbox(img.src, img.alt);
-});
-
-/* Cerrar al pulsar botón */
-lightboxClose.addEventListener('click', closeLightbox);
-
-/* Cerrar al clicar en el fondo oscuro (pero no sobre la imagen) */
-lightbox.addEventListener('click', function (e) {
-    if (e.target === lightbox) closeLightbox();
-});
-
-/* Cerrar con ESC */
-document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeLightbox();
-});
-
-        var footer = document.createElement('div');
-
-        if (config.footer) {
-            var footerText = document.createElement('p');
-            footerText.innerHTML = config.footer;
-            footer.appendChild(footerText);
-        }
-
-        if (footer.innerText.length > 0) {
-            footer.classList.add(config.theme);
-            footer.setAttribute('id', 'footer');
-            story.appendChild(footer);
-        }
-
-        mapboxgl.accessToken = config.accessToken;
-
-        var map = new mapboxgl.Map({
-            container: 'map',
-            style: config.style,
-            center: config.chapters[0].location.center,
-            zoom: config.chapters[0].location.zoom,
-            bearing: config.chapters[0].location.bearing,
-            pitch: config.chapters[0].location.pitch,
-            interactive: true,
-            projection: config.projection
-        });
-
-/* BLOQUEAR INTERACCIÓN INICIAL (modo storytelling) */
-map.scrollZoom.disable();
-map.doubleClickZoom.disable();
-map.touchZoomRotate.disable();
-map.dragPan.disable();
-map.dragRotate.disable();
-map.touchPitch.disable();
-map.boxZoom.disable();
-map.keyboard.disable();
-
-
-
-
-
-
-
-        // Create a inset map if enabled in config.js
-        if (config.inset) {
-            map.addControl(
-                new GlobeMinimap({ ...config.insetOptions }),
-                config.insetPosition
-            );
-        }
-
-        if (config.showMarkers) {
-            var marker = new mapboxgl.Marker({ color: config.markerColor });
-            marker.setLngLat(
-        config.chapters[0].markerCenter || config.chapters[0].location.center
-    ).addTo(map);
-        }
-
-/* =====================================================
-   CAMBIO (DESAFIO 2): MODO EXPLORAR MAPA EN EL ÚLTIMO CAPÍTULO
-   - Activa zoom, mover, rotar, teclado, etc. SOLO en "Explora el mapa"
-   - Al salir de ese capítulo, vuelve a dejar el mapa bloqueado
-   ===================================================== */
-
-// Control de navegación (zoom +/- y brújula). Se añade solo en modo explorar.
-var navControl = new mapboxgl.NavigationControl({ visualizePitch: true });
-var navControlAdded = false;
-
-// Activa interacción
-window.enableExploreMode = function () {
-    /* CAMBIO: dejar que el mapa reciba eventos (el story los estaba bloqueando) */
-    document.body.classList.add('explore-mode');
-
-    /* FIX: asegurar que el canvas recibe eventos */
-    map.getCanvas().style.pointerEvents = 'auto';
-
-    map.scrollZoom.enable();
-    map.doubleClickZoom.enable();
-    map.touchZoomRotate.enable();
-    map.dragPan.enable();
-    map.dragRotate.enable();
-    map.touchPitch.enable();
-    map.boxZoom.enable();
-    map.keyboard.enable();
-
-    map.getCanvas().style.cursor = 'grab';
-
-    if (!navControlAdded) {
-        map.addControl(navControl, 'top-right');
-        navControlAdded = true;
+    /* Devuelve propiedades de “paint” según tipo de capa */
+    function getLayerPaintType(layer) {
+      var layerType = map.getLayer(layer).type;
+      return layerTypes[layerType];
     }
-};
 
-window.disableExploreMode = function () {
-    /* CAMBIO: volver al modo storytelling (story vuelve a recibir eventos) */
-    document.body.classList.remove('explore-mode');
+    /* Aplica opacidad a una capa (con transición opcional) */
+    function setLayerOpacity(layer) {
+      var paintProps = getLayerPaintType(layer.layer);
+      paintProps.forEach(function (prop) {
+        var options = {};
+        if (layer.duration) {
+          var transitionProp = prop + "-transition";
+          options = { "duration": layer.duration };
+          map.setPaintProperty(layer.layer, transitionProp, options);
+        }
+        map.setPaintProperty(layer.layer, prop, layer.opacity, options);
+      });
+    }
 
-    /* FIX: restaurar pointer-events del canvas */
-    map.getCanvas().style.pointerEvents = '';
+    /*
+      ==========================================================
+      2) “INYECCIÓN” DE UN CAPÍTULO PARA EL GRÁFICO (sin tocar config.js)
+      ==========================================================
+      Tu storytelling se genera a partir de config.chapters.
+      Para “meter” un gráfico como el de la imagen (pero con un toque elegante),
+      añadimos un capítulo de contexto si aún no existe.
+    */
+    (function injectChartChapter(){
+      return; // DESACTIVA ESTA FUNCIÓN SI NO QUIERES EL CAPÍTULO DE EVOLUCIÓN SEMANAL (puedes crear el tuyo propio desde config.js)
+      if (!window.config || !Array.isArray(config.chapters)) return;
 
-    map.scrollZoom.disable();
-    map.doubleClickZoom.disable();
-    map.touchZoomRotate.disable();
-    map.dragPan.disable();
-    map.dragRotate.disable();
-    map.touchPitch.disable();
-    map.boxZoom.disable();
-    map.keyboard.disable();
+      var already = config.chapters.some(ch => ch.id === 'evolucion_agua');
+      if (already) return;
 
+      // Insertamos el capítulo justo después de la introducción (si existe), o al principio.
+      var introIdx = config.chapters.findIndex(ch => ch.id === 'introduccion');
+      var insertAt = introIdx >= 0 ? introIdx + 1 : 0;
+
+      config.chapters.splice(insertAt, 0, {
+        id: 'evolucion_agua',
+        alignment: 'center',
+        hidden: false,
+        title: 'Evolución semanal del agua embalsada (contexto)',
+        // Importante: metemos un canvas para Chart.js dentro del description.
+        description: `
+          <p>Antes de entrar en cada embalse, vemos el pulso semanal del sistema (líneas por año y una referencia de la última década).</p>
+          <div class="chart-wrap">
+            <div class="chart-title">Elige un embalse: al pulsar en su nombre, el gráfico se actualiza (hm³, semanal).</div>
+            <div id="embalse-tabs" class="chart-tabs" role="tablist" aria-label="Embalses"></div>
+            <div id="embalse-selected" class="chart-subtitle"></div>
+            <canvas id="chart-evolucion" aria-label="Gráfico de evolución semanal" role="img"></canvas>
+          </div>
+        `,
+        location: {
+          center: [-5.2, 39.0],
+          zoom: 7.2,
+          pitch: 0,
+          bearing: 0
+        },
+        mapAnimation: 'flyTo',
+        rotateAnimation: false,
+        // Callback: se dispara al entrar en el capítulo (Scrollama)
+        callback: 'renderEvolutionChart',
+        callbackExit: null,
+        onChapterEnter: [{ layer: 'embalses-labels', opacity: 1 }],
+        onChapterExit: []
+      });
+    })();
+
+    /*
+      ==========================================================
+      3) CONSTRUCCIÓN DEL DOM: header + capítulos + footer
+      ==========================================================
+      IMPORTANTÍSIMO: tu header NO está escrito en HTML; se genera aquí.
+      La historia también se genera aquí recorriendo config.chapters.
+    */
+    var story = document.getElementById('story');
+    var features = document.createElement('div');
+    features.setAttribute('id', 'features');
+
+    // ===== Header dinámico =====
+    var header = document.createElement('div');
+
+    // LOGO (si existe en /assets)
+    var logo = document.createElement('img');
+    logo.src = 'assets/LOGO VISUALIZACION DE DATOS.svg';
+    logo.classList.add('logo');
+    header.appendChild(logo);
+
+    var headerText = document.createElement('div');
+    headerText.classList.add('header-text');
+
+    if (config.title) {
+      var titleText = document.createElement('h1');
+      titleText.innerText = config.title;
+      headerText.appendChild(titleText);
+    }
+
+    if (config.subtitle) {
+      var subtitleText = document.createElement('h2');
+      subtitleText.innerText = config.subtitle;
+      headerText.appendChild(subtitleText);
+    }
+
+    if (config.byline) {
+      var bylineText = document.createElement('p');
+      bylineText.innerText = config.byline;
+      header.appendChild(bylineText);
+    }
+
+    header.appendChild(headerText);
+
+    if (header.innerText.length > 0) {
+      header.classList.add(config.theme);
+      header.setAttribute('id', 'header');
+      story.appendChild(header);
+    }
+
+    // ===== Capítulos dinámicos =====
+    config.chapters.forEach((record, idx) => {
+      var container = document.createElement('div');
+      var chapter = document.createElement('div');
+
+      if (record.title) {
+        var title = document.createElement('h3');
+        title.innerText = record.title;
+        chapter.appendChild(title);
+      }
+
+      if (record.image) {
+        var image = new Image();
+        image.src = record.image;
+        image.classList.add('capitulo-img');
+        // Accesibilidad: alt text
+        image.alt = record.imageAlt || (record.title ? ('Imagen: ' + record.title) : 'Imagen del capítulo');
+        chapter.appendChild(image);
+      }
+
+      if (record.description) {
+        var para = document.createElement('p');
+        // OJO: description puede contener HTML (canvas/div para gráficos)
+        para.innerHTML = record.description;
+        chapter.appendChild(para);
+      }
+
+      container.setAttribute('id', record.id);
+      container.classList.add('step');
+      if (idx === 0) container.classList.add('active');
+
+      chapter.classList.add(config.theme);
+      container.appendChild(chapter);
+      container.classList.add(alignments[record.alignment] || 'centered');
+
+      if (record.hidden) container.classList.add('hidden');
+      features.appendChild(container);
+    });
+
+    story.appendChild(features);
+
+    /*
+      ==========================================================
+      MODAL DE IMÁGENES (96% de pantalla)
+      ==========================================================
+      - Cualquier imagen de capítulo (class="capitulo-img") abre un modal.
+      - Cierra al hacer click fuera / sobre el fondo o con ESC.
+    */
+    (function setupImageModal(){
+      const modal = document.getElementById('imageModal');
+      const modalImg = document.getElementById('modalImg');
+      if (!modal || !modalImg) return;
+
+      function open(src, alt){
+        modalImg.src = src;
+        modalImg.alt = alt || '';
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden'; // evita scroll del body al abrir
+      }
+      function close(){
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden','true');
+        modalImg.src = '';
+        modalImg.alt = '';
+        document.body.style.overflow = '';
+      }
+
+      // Delegación: sirve aunque cambies el DOM más adelante
+      document.addEventListener('click', (e) => {
+        const img = e.target && e.target.closest && e.target.closest('img.capitulo-img');
+        if (img) {
+          open(img.currentSrc || img.src, img.alt);
+        }
+      });
+
+      // Cerrar al hacer click en el fondo (no en la imagen)
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) close();
+      });
+
+      // Cerrar con ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) close();
+      });
+
+      // Por si quieres cerrar tocando la propia imagen (opcional)
+      modalImg.addEventListener('click', close);
+    })();
+
+
+
+    // ===== Footer dinámico =====
+    var footer = document.createElement('div');
+    if (config.footer) {
+      var footerText = document.createElement('p');
+      footerText.innerHTML = config.footer;
+      footer.appendChild(footerText);
+    }
+    if (footer.innerText.length > 0) {
+      footer.classList.add(config.theme);
+      footer.setAttribute('id', 'footer');
+      story.appendChild(footer);
+    }
+
+    /*
+      ==========================================================
+      4) MAPA (Mapbox GL JS)
+      ==========================================================
+      - Se inicializa con la primera localización del storytelling
+      - Se crean fuentes (GeoJSON) y capas (fill/line/circle/symbol)
+      - Se configuran interacciones (modo exploración)
+    */
+    mapboxgl.accessToken = config.accessToken;
+
+    // Inicializa la instancia del mapa (Mapbox GL JS).
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: config.style,
+      center: config.chapters[0].location.center,
+      zoom: config.chapters[0].location.zoom,
+      bearing: config.chapters[0].location.bearing,
+      pitch: config.chapters[0].location.pitch,
+      interactive: true, // lo dejamos “true” pero desactivamos handlers hasta modo exploración
+      projection: config.projection
+    });
+
+    /*
+      ===== Interacción: habilitada pero desactivada por defecto =====
+      Así el storytelling no “compite” con el scroll.
+      En el último capítulo (“Explora el mapa”) lo activamos.
+    */
+    function disableMapInteractions() {
+      map.scrollZoom.disable();
+      map.boxZoom.disable();
+      map.dragRotate.disable();
+      map.dragPan.disable();
+      map.keyboard.disable();
+      map.doubleClickZoom.disable();
+      map.touchZoomRotate.disable();
+    }
+    function enableMapInteractions() {
+      map.scrollZoom.enable();
+      map.boxZoom.enable();
+      map.dragRotate.enable();
+      map.dragPan.enable();
+      map.keyboard.enable();
+      map.doubleClickZoom.enable();
+      map.touchZoomRotate.enable();
+    }
+
+    // Controles (se ocultan por CSS hasta "modo exploración")
+    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    map.addControl(new mapboxgl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
+
+    disableMapInteractions();
+
+    /*
+      ==========================================================
+      5) UI FLOTANTE (leyenda + filtros + búsqueda + progreso + mini-gráfico)
+      ==========================================================
+      Estos paneles aparecen en “modo exploración”.
+    */
+    function createMapUI() {
+      const ui = document.createElement('div');
+      ui.id = 'map-ui';
+
+  
+      // Leyenda
+      const legend = document.createElement('div');
+      legend.id = 'legend';
+      legend.className = 'panel explore-only';
+      legend.innerHTML = `
+        <h4>Leyenda</h4>
+        <div class="item"><span class="swatch" style="background:#0077b6;"></span><span>Embalse (punto)</span></div>
+        <div class="item"><span class="swatch" style="background:#ffb703;"></span><span>Embalse destacado</span></div>
+        <div class="item"><span class="swatch fill" style="background:#f03b20; opacity:.35;"></span><span>Lámina de agua (polígono)</span></div>
+        <div class="item"><span class="swatch fill" style="background:transparent; border:2px solid #01497c;"></span><span>Contorno</span></div>
+      `;
+
+      // Filtros + búsqueda
+      const filters = document.createElement('div');
+      filters.id = 'filters';
+      filters.className = 'panel explore-only';
+      filters.innerHTML = `
+        <h4>Explorar</h4>
+
+        <label for="searchEmbalse">Buscar embalse</label>
+        <input id="searchEmbalse" type="search" placeholder="Ej.: Cíjara, Orellana…" list="embalseList" autocomplete="off"/>
+        <datalist id="embalseList"></datalist>
+
+        <label for="riverSelect">Río</label>
+        <select id="riverSelect">
+          <option value="">Todos</option>
+        </select>
+
+        <label for="capRange">Capacidad mínima (hm³)</label>
+        <input id="capRange" type="range" min="0" max="100" step="10" value="0"/>
+        <div class="row">
+          <div class="muted" id="capLabel">≥ 0 hm³</div>
+          <div class="muted" style="margin-left:auto" id="countLabel"></div>
+        </div>
+
+                <label style="margin-top:10px; display:flex; align-items:center; gap:8px;"><input id="toggleHeatmap" type="checkbox" style="width:auto; margin:0;" /><span>Ver densidad (heatmap)</span></label>
+
+        <button id="resetFilters" type="button">Restablecer filtros</button>
+      `;
+
+      // Mini-gráfico (modo exploración): muestra la serie del embalse seleccionado
+      const chartPanel = document.createElement('div');
+      chartPanel.id = 'chart-panel';
+      chartPanel.className = 'panel explore-only';
+      chartPanel.innerHTML = `
+        <h4>Serie del embalse (últimos años)</h4>
+        <div class="muted" id="miniChartHint">Selecciona un embalse en el buscador para ver su evolución.</div>
+        <canvas id="chart-embalse-mini" aria-label="Serie temporal del embalse" role="img"></canvas>
+      `;
+
+      // Progreso (siempre visible)
+      const progress = document.createElement('div');
+      progress.id = 'progress';
+      progress.className = 'panel';
+      progress.innerHTML = `
+        <h4>Progreso</h4>
+        <div class="text" id="progressText">Capítulo 1 / ${config.chapters.length}</div>
+        <div class="bar"><div id="progressBar"></div></div>
+      `;
+
+      document.body.appendChild(ui);
+      ui.appendChild(legend);
+      ui.appendChild(filters);
+      ui.appendChild(chartPanel);
+      document.body.appendChild(progress);
+
+      return { ui, legend, filters, chartPanel, progress };
+    }
+
+    const uiRefs = createMapUI();
+
+    // Activa/desactiva el modo exploración (CSS + handlers de Mapbox)
+    function setExploreMode(isOn) {
+      document.body.classList.toggle('explore-mode', !!isOn);
+      if (isOn) enableMapInteractions();
+      else disableMapInteractions();
+    }
+
+    /*
+      ==========================================================
+      6) DATOS: EMBALSES (GeoJSON) + CSV (series temporales)
+      ==========================================================
+      - GeoJSON: para pintar puntos/polígonos en el mapa
+      - CSV: para construir gráficos (Chart.js)
+    */
+    let activePopup = null;
+    let embalsesData = null;          // cache embalses.geojson
+    let csvCache = null;              // cache embalses_capacidad.csv (series)
+    let chartEvolucion = null;        // instancia Chart.js (capítulo)
+    let chartEmbalseMini = null;      // mini chart (modo exploración)
+
+    // Carga el GeoJSON de embalses una vez y lo cachea
+    async function loadEmbalsesData() {
+      if (embalsesData) return embalsesData;
+      const response = await fetch('data/embalses.geojson');
+      embalsesData = await response.json();
+      return embalsesData;
+    }
+
+    // CSV: parseo simple de ; con comas decimales
+    function parseCSVSemicolon(text) {
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      if (!lines.length) return [];
+      const headers = lines[0].split(';').map(h => h.trim());
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(';');
+        if (cols.length !== headers.length) continue;
+        const obj = {};
+        headers.forEach((h, idx) => obj[h] = (cols[idx] ?? '').trim());
+        rows.push(obj);
+      }
+      return rows;
+    }
+
+    function parseSpanishDateDMY(s) {
+      // FECHA en formato dd/mm/yyyy
+      const m = String(s || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (!m) return null;
+      const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
+      const d = new Date(Date.UTC(yy, mm - 1, dd));
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Semana ISO (1..53): útil para gráficos semanales tipo embalses.net
+    function isoWeekYear(d) {
+      const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      const dayNum = (date.getUTCDay() + 6) % 7; // lunes=0
+      date.setUTCDate(date.getUTCDate() - dayNum + 3); // mover a jueves
+
+      const isoYear = date.getUTCFullYear();
+
+      const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+      const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
+      firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
+
+      const isoWeek = 1 + Math.round((date - firstThursday) / (7 * 24 * 3600 * 1000));
+      return { isoYear, isoWeek };
+    }
+
+    function toNumberCommaDecimal(v) {
+      if (v == null) return null;
+      const s = String(v).replace(',', '.');
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    // Carga el CSV de series temporales (en /embalses_capacidad.csv)
+    async function loadCapacidadCSV() {
+      if (csvCache) return csvCache;
+      const res = await fetch('data/embalses_capacidad.csv'); // archivo subido al proyecto
+      const txt = await res.text();
+      const rows = parseCSVSemicolon(txt);
+
+      // Normalizamos campos clave y convertimos a números/fechas
+      csvCache = rows.map(r => {
+        const date = parseSpanishDateDMY(r.FECHA);
+        const yw = date ? isoWeekYear(date) : null;
+        return {
+          ambito: r.AMBITO_NOMBRE,
+          embalse: r.EMBALSE_NOMBRE,
+          fecha: date,
+          isoYear: yw ? yw.isoYear : null,
+          isoWeek: yw ? yw.isoWeek : null,
+          agua_total: toNumberCommaDecimal(r.AGUA_TOTAL),
+          agua_actual: toNumberCommaDecimal(r.AGUA_ACTUAL)
+        };
+      }).filter(r => r.fecha && r.isoWeek && r.isoYear);
+
+      return csvCache;
+    }
+
+    /*
+      ==========================================================
+      7) HIGHLIGHT + POPUPS (mapa)
+      ==========================================================
+      Estas funciones controlan resaltado de capas y popups informativos.
+    */
+    function highlightEmbalse(nombre) {
+      if (!map.getLayer('embalses-highlight')) return;
+      map.setFilter('embalses-highlight', ['==', ['get', 'nombre'], nombre]);
+    }
+
+    function highlightLabel(nombre) {
+      if (!map.getLayer('embalses-label-highlight')) return;
+      map.setFilter('embalses-label-highlight', ['==', ['get', 'nombre'], nombre]);
+    }
+
+    function clearHighlightLabel() {
+      if (!map.getLayer('embalses-label-highlight')) return;
+      map.setFilter('embalses-label-highlight', ['==', ['get', 'nombre'], '']);
+    }
+
+    function clearHighlight() {
+      if (!map.getLayer('embalses-highlight')) return;
+      map.setFilter('embalses-highlight', ['==', ['get', 'nombre'], '']);
+    }
+
+    function highlightEmbalsePolygon(nombre) {
+      if (!map.getLayer('embalses-polygons-highlight')) return;
+      map.setFilter('embalses-polygons-highlight', ['==', ['get', 'nombre'], nombre]);
+    }
+
+    function clearEmbalsePolygonHighlight() {
+      if (!map.getLayer('embalses-polygons-highlight')) return;
+      map.setFilter('embalses-polygons-highlight', ['==', ['get', 'nombre'], '']);
+    }
+
+    async function showEmbalsePopup(nombre) {
+      const data = await loadEmbalsesData();
+      const feature = data.features.find(f => f.properties && f.properties.nombre === nombre);
+      if (!feature) return;
+
+      const coords = feature.geometry.coordinates;
+      const props = feature.properties;
+
+      if (activePopup) activePopup.remove();
+
+      // Crea un popup para mostrar información al usuario.
+      activePopup = new mapboxgl.Popup({ closeButton: true, closeOnClick: false })
+        .setLngLat(coords)
+        .setHTML(
+          '<h3>' + props.nombre + '</h3>' +
+          '<p><strong>Río:</strong> ' + props.rio + '</p>' +
+          '<p><strong>Capacidad:</strong> ' + props.capacidad + '</p>'
+        )
+        .addTo(map);
+    }
+
+    function closeEmbalsePopup() {
+      if (activePopup) { activePopup.remove(); activePopup = null; }
+    }
+
+    /*
+      ==========================================================
+      8) CALLBACKS DE CAPÍTULOS (config.js)
+      ==========================================================
+      En config.js, cada capítulo puede definir callback/callbackExit.
+      Aquí exponemos esas funciones en window[...] para que el motor las llame.
+    */
+    window.onCijaraEnter = async function () {
+      highlightEmbalse('Cíjara');
+      highlightEmbalsePolygon('Embalse de Cíjara');
+      highlightLabel('Cíjara');
+      await showEmbalsePopup('Cíjara');
+    };
+    window.onCijaraExit = function () {
+      clearHighlight(); clearEmbalsePolygonHighlight(); clearHighlightLabel(); closeEmbalsePopup();
+    };
+
+    window.onGarciaDeSolaEnter = async function () {
+      highlightEmbalse('García de Sola');
+      highlightEmbalsePolygon('Embalse de García de Sola');
+      highlightLabel('García de Sola');
+      await showEmbalsePopup('García de Sola');
+    };
+    window.onGarciaDeSolaExit = function () {
+      clearHighlight(); clearEmbalsePolygonHighlight(); clearHighlightLabel(); closeEmbalsePopup();
+    };
+
+    window.onOrellanaEnter = async function () {
+      highlightEmbalse('Orellana');
+      highlightEmbalsePolygon('Embalse de Orellana');
+      highlightLabel('Orellana');
+      await showEmbalsePopup('Orellana');
+    };
+    window.onOrellanaExit = function () {
+      clearHighlight(); clearEmbalsePolygonHighlight(); clearHighlightLabel(); closeEmbalsePopup();
+    };
+
+    window.onLaSerenaEnter = async function () {
+      highlightEmbalse('La Serena');
+      highlightEmbalsePolygon('Embalse de la Serena');
+      highlightLabel('La Serena');
+      await showEmbalsePopup('La Serena');
+    };
+    window.onLaSerenaExit = function () {
+      clearHighlight(); clearEmbalsePolygonHighlight(); clearHighlightLabel(); closeEmbalsePopup();
+    };
+
+    window.onZujarEnter = async function () {
+      highlightEmbalse('Zújar');
+      highlightEmbalsePolygon('Embalse del Zújar');
+      highlightLabel('Zújar');
+      await showEmbalsePopup('Zújar');
+    };
+    window.onZujarExit = function () {
+      clearHighlight(); clearEmbalsePolygonHighlight(); clearHighlightLabel(); closeEmbalsePopup();
+    };
+
+    /*
+      ==========================================================
+      9) CAPÍTULO DE GRÁFICO (callback: renderEvolutionChart)
+      ==========================================================
+      - Construye un gráfico semanal elegante con Chart.js.
+      - “Toque diferente”: líneas suaves, poca tinta, leyenda compacta,
+        tooltip limpio y una media 10 años discontinua.
+    */
+    
+    window.renderEvolutionChart = async function () {
+      /*
+        Este gráfico es “por embalse”: muestra una serie semanal para el embalse elegido (tabs).
+        - Media (hasta 10 años previos) en línea discontinua
+        - Últimos 3 años disponibles como líneas continuas (estilo editorial)
+      */
+
+      const canvas = document.getElementById('chart-evolucion');
+      const tabsEl = document.getElementById('embalse-tabs');
+      const selectedEl = document.getElementById('embalse-selected');
+
+      if (!canvas || !tabsEl) return;
+
+      // Lista de embalses protagonistas del storytelling (coherente con narrativa)
+      const embalsesHistoria = ['Cíjara', 'García de Sola', 'Orellana', 'La Serena', 'Zújar'];
+
+      // Carga CSV (cacheado)
+      const rows = await loadCapacidadCSV();
+
+      // Helper: años disponibles para un embalse
+      function yearsForEmbalse(name){
+        return Array.from(new Set(rows.filter(r => r.embalse === name).map(r => r.isoYear))).sort((a,b)=>a-b);
+      }
+
+      // Prepara tabs (una sola vez)
+      if (!tabsEl.dataset.built) {
+        tabsEl.dataset.built = "1";
+        tabsEl.innerHTML = '';
+
+        embalsesHistoria.forEach((name, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chart-tab';
+          btn.setAttribute('role', 'tab');
+          btn.setAttribute('aria-selected', idx === 0 ? 'true' : 'false');
+          btn.textContent = name;
+
+          btn.addEventListener('click', () => {
+            Array.from(tabsEl.querySelectorAll('.chart-tab')).forEach(b => b.setAttribute('aria-selected','false'));
+            btn.setAttribute('aria-selected','true');
+            updateChartForEmbalse(name);
+          });
+
+          tabsEl.appendChild(btn);
+        });
+      }
+
+      const weeks = Array.from({length: 53}, (_,i)=>i+1);
+
+      // Serie semanal (year) para un embalse
+      function seriesForEmbalseYear(name, y) {
+        const mapYW = new Map();
+        rows.filter(r => r.embalse === name && r.isoYear === y).forEach(r => {
+          const key = `${r.isoYear}-${r.isoWeek}`;
+          mapYW.set(key, (mapYW.get(key) || 0) + (r.agua_actual || 0));
+        });
+
+        return weeks.map(w => {
+          const v = mapYW.get(`${y}-${w}`);
+          return (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+        });
+      }
+
+      // Media (hasta 10 años previos) por semana
+      function avgForEmbalse(name, years) {
+        const mapYW = new Map();
+        rows.filter(r => r.embalse === name).forEach(r => {
+          const key = `${r.isoYear}-${r.isoWeek}`;
+          mapYW.set(key, (mapYW.get(key) || 0) + (r.agua_actual || 0));
+        });
+
+        return weeks.map(w => {
+          let acc = 0, n = 0;
+          for (const y of years) {
+            const v = mapYW.get(`${y}-${w}`);
+            if (typeof v === 'number' && isFinite(v) && v > 0) { acc += v; n++; }
+          }
+          return n ? (acc / n) : null;
+        });
+      }
+
+      // Paleta editorial (toque diferente al ejemplo)
+      const palette = [
+        'rgba(0,119,182,0.92)',
+        'rgba(32,201,151,0.90)',
+        'rgba(255,183,3,0.92)'
+      ];
+
+      function updateChartForEmbalse(name){
+        const years = yearsForEmbalse(name);
+        if (!years.length) {
+          if (selectedEl) selectedEl.textContent = `No hay datos en el CSV para: ${name}`;
+          return;
+        }
+
+        const recentYears = years.slice(-3);
+        const lastYear = recentYears[recentYears.length - 1];
+        const avgYears = years.filter(y => y < lastYear).slice(-10);
+
+        const datasets = [];
+
+        datasets.push({
+          label: `Media ${avgYears.length || 0} años`,
+          data: avgYears.length ? avgForEmbalse(name, avgYears) : weeks.map(_=>null),
+          borderColor: 'rgba(0,0,0,0.55)',
+          borderWidth: 2,
+          borderDash: [6, 6],
+          pointRadius: 0,
+          tension: 0.25
+        });
+
+        recentYears.forEach((y, i) => {
+          datasets.push({
+            label: String(y),
+            data: seriesForEmbalseYear(name, y),
+            borderColor: palette[i % palette.length],
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.25
+          });
+        });
+
+        if (selectedEl) {
+          selectedEl.textContent =
+            `Embalse seleccionado: ${name} · Comparativa semanal por años (cada línea es un año; no es serie continua entre años).`;
+        }
+
+        if (!chartEvolucion) {
+          chartEvolucion = new Chart(canvas, {
+            type: 'line',
+            data: { labels: weeks.map(w => String(w)), datasets },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: {
+                  position: 'top',
+                  labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'line' }
+                },
+                tooltip: {
+                  callbacks: {
+                    title: (items) => `Semana ${items?.[0]?.label ?? ''}`,
+                    label: (ctx) => {
+                      const v = ctx.parsed.y;
+                      if (v == null) return `${ctx.dataset.label}: —`;
+                      return `${ctx.dataset.label}: ${Math.round(v).toLocaleString('es-ES')} hm³`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: { title: { display: true, text: 'Semana del año' }, grid: { display: false } },
+                y: { title: { display: true, text: 'hm³' }, grid: { color: 'rgba(0,0,0,0.08)' } }
+              }
+            }
+          });
+        } else {
+          chartEvolucion.data.datasets = datasets;
+          chartEvolucion.update();
+        }
+      }
+
+      // Selección por defecto: el tab marcado (o el primero)
+      const currentSelectedBtn = tabsEl.querySelector('.chart-tab[aria-selected="true"]');
+      const currentSelected = currentSelectedBtn ? currentSelectedBtn.textContent : null;
+      updateChartForEmbalse(currentSelected || embalsesHistoria[0]);
+    };
+
+
+    /*
+      ==========================================================
+      10) MODO EXPLORACIÓN + FILTROS (puntos/labels) + MINI GRÁFICO
+      ==========================================================
+      En el capítulo final (“explorar”) activamos interacción y UI.
+    */
+    // Parsing de “capacidad” a número para filtros
+    function parseCapacidadToNumber(value) {
+      if (value == null) return null;
+      const s = String(value).replace(',', '.');
+      const m = s.match(/[-+]?\d*\.?\d+/);
+      if (!m) return null;
+      const n = Number(m[0]);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    async function ensureEmbalsesDataEnriched() {
+      const data = await loadEmbalsesData();
+      let changed = false;
+      data.features.forEach(f => {
+        if (!f.properties) f.properties = {};
+        if (typeof f.properties.capacidad_num !== 'number') {
+          const n = parseCapacidadToNumber(f.properties.capacidad);
+          if (n != null) { f.properties.capacidad_num = n; changed = true; }
+        }
+      });
+      const src = map.getSource('embalses');
+      if (src && changed) src.setData(data);
+      return data;
+    }
+
+    function buildExploreUIFromData(data) {
+      const list = document.getElementById('embalseList');
+      const riverSelect = document.getElementById('riverSelect');
+      const capRange = document.getElementById('capRange');
+      const capLabel = document.getElementById('capLabel');
+
+      // datalist (autocompletar)
+      list.innerHTML = '';
+      const names = data.features.map(f => f.properties?.nombre).filter(Boolean).sort((a,b)=>a.localeCompare(b,'es'));
+      names.forEach(n => { const opt=document.createElement('option'); opt.value=n; list.appendChild(opt); });
+
+      // ríos (dropdown)
+      const rivers = Array.from(new Set(data.features.map(f => f.properties?.rio).filter(Boolean)))
+        .sort((a,b)=>a.localeCompare(b,'es'));
+      riverSelect.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
+      rivers.forEach(r => { const opt=document.createElement('option'); opt.value=r; opt.textContent=r; riverSelect.appendChild(opt); });
+
+      // capacidad slider
+      const caps = data.features.map(f => f.properties?.capacidad_num).filter(n => typeof n === 'number' && isFinite(n));
+      const maxCap = caps.length ? Math.ceil(Math.max(...caps) / 10) * 10 : 100;
+      capRange.max = String(maxCap);
+      capRange.step = String(Math.max(10, Math.round(maxCap / 20)));
+      capRange.value = "0";
+      capLabel.textContent = `≥ 0 hm³`;
+    }
+
+    function applyEmbalsesFilters() {
+      const river = document.getElementById('riverSelect').value;
+      const minCap = Number(document.getElementById('capRange').value || 0);
+
+      // Expresión de filtro Mapbox (se aplica a capas)
+      const filter = ['all'];
+      if (river) filter.push(['==', ['get', 'rio'], river]);
+      if (Number.isFinite(minCap) && minCap > 0) {
+        filter.push(['>=', ['coalesce', ['get', 'capacidad_num'], 0], minCap]);
+      }
+
+      if (map.getLayer('embalses-points')) map.setFilter('embalses-points', filter);
+      if (map.getLayer('embalses-labels')) map.setFilter('embalses-labels', filter);
+
+      // contador (en UI)
+      if (embalsesData?.features) {
+        const count = embalsesData.features.filter(f => {
+          const rioOk = !river || f.properties?.rio === river;
+          const capOk = !(minCap > 0) || (Number(f.properties?.capacidad_num || 0) >= minCap);
+          return rioOk && capOk;
+        }).length;
+        const countLabel = document.getElementById('countLabel');
+        if (countLabel) countLabel.textContent = `${count} embalses`;
+      }
+    }
+
+    // Mini gráfico por embalse (últimos 6 años)
+    async function renderMiniEmbalseChart(embalseName) {
+      const canvas = document.getElementById('chart-embalse-mini');
+      if (!canvas) return;
+
+      const rows = await loadCapacidadCSV();
+      const scoped = rows.filter(r => r.embalse === embalseName);
+
+      if (!scoped.length) {
+        document.getElementById('miniChartHint').textContent = 'No hay datos en el CSV para este embalse.';
+        return;
+      }
+
+      // Agrupamos por (año, semana) -> valor (agua_actual)
+      const years = Array.from(new Set(scoped.map(r => r.isoYear))).sort((a,b)=>a-b);
+      const recent = years.slice(-6);
+      const weeks = Array.from({length: 53}, (_,i)=>i+1);
+
+      const mapYW = new Map();
+      for (const r of scoped) {
+        mapYW.set(`${r.isoYear}-${r.isoWeek}`, (mapYW.get(`${r.isoYear}-${r.isoWeek}`) || 0) + (r.agua_actual || 0));
+      }
+
+      const datasets = recent.map((y, idx) => {
+        const isLast = y === recent[recent.length - 1];
+        return {
+          label: String(y),
+          data: weeks.map(w => {
+            const v = mapYW.get(`${y}-${w}`);
+            return (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+          }),
+          borderColor: isLast ? 'rgba(255,183,3,0.92)' : 'rgba(255,255,255,0.35)',
+          borderWidth: isLast ? 2.5 : 1.2,
+          pointRadius: 0,
+          tension: 0.25
+        };
+      });
+
+      if (chartEmbalseMini) chartEmbalseMini.destroy();
+
+      chartEmbalseMini = new Chart(canvas, {
+        type: 'line',
+        data: { labels: weeks.map(w => String(w)), datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: (items) => `Semana ${items?.[0]?.label ?? ''}`,
+                label: (ctx) => {
+                  const v = ctx.parsed.y;
+                  if (v == null) return `${ctx.dataset.label}: —`;
+                  return `${ctx.dataset.label}: ${Math.round(v).toLocaleString('es-ES')} hm³`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: { display: true, grid: { color: 'rgba(255,255,255,0.12)' }, ticks: { color: 'rgba(255,255,255,0.85)' } }
+          }
+        }
+      });
+
+      document.getElementById('miniChartHint').textContent = `Mostrando ${embalseName} (últimos ${recent.length} años, se resalta el más reciente).`;
+    }
+
+    async function setupExploreUI() {
+      const data = await ensureEmbalsesDataEnriched();
+      buildExploreUIFromData(data);
+      applyEmbalsesFilters();
+
+      const search = document.getElementById('searchEmbalse');
+      const riverSelect = document.getElementById('riverSelect');
+      const capRange = document.getElementById('capRange');
+      const capLabel = document.getElementById('capLabel');
+      const resetBtn = document.getElementById('resetFilters');
+
+      // Buscar embalse -> flyTo + popup + highlight + mini gráfico
+      if (!search.dataset.bound) {
+        search.dataset.bound = "1";
+        search.addEventListener('change', async () => {
+          const name = search.value?.trim();
+          if (!name) return;
+
+          const data = await ensureEmbalsesDataEnriched();
+          const f = data.features.find(x => x.properties?.nombre === name);
+          if (!f) return;
+
+          const coords = f.geometry?.coordinates;
+          if (!coords) return;
+
+          map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 10), speed: 0.9 });
+          highlightEmbalse(name);
+          highlightLabel(name);
+          await showEmbalsePopup(name);
+
+          // Actualiza mini gráfico
+          await renderMiniEmbalseChart(name);
+        });
+      }
+
+      if (!riverSelect.dataset.bound) {
+        riverSelect.dataset.bound = "1";
+        riverSelect.addEventListener('change', () => applyEmbalsesFilters());
+      }
+
+      if (!capRange.dataset.bound) {
+        capRange.dataset.bound = "1";
+        capRange.addEventListener('input', () => {
+          capLabel.textContent = `≥ ${capRange.value} hm³`;
+          applyEmbalsesFilters();
+        });
+      }
+
+      if (!resetBtn.dataset.bound) {
+        resetBtn.dataset.bound = "1";
+        resetBtn.addEventListener('click', () => {
+          document.getElementById('searchEmbalse').value = '';
+          riverSelect.value = '';
+          capRange.value = '0';
+          capLabel.textContent = '≥ 0 hm³';
+          applyEmbalsesFilters();
+          clearHighlight();
+          clearHighlightLabel();
+          closeEmbalsePopup();
+          document.getElementById('miniChartHint').textContent = 'Selecciona un embalse en el buscador para ver su evolución.';
+          if (chartEmbalseMini) { chartEmbalseMini.destroy(); chartEmbalseMini = null; }
+
+      // Resetea heatmap y opacidades
+      const toggleHeatmap = document.getElementById('toggleHeatmap');
+      if (toggleHeatmap) toggleHeatmap.checked = false;
+      if (map.getLayer('embalses-heat')) map.setLayoutProperty('embalses-heat', 'visibility', 'none');
+      if (map.getLayer('embalses-points')) {
+        map.setPaintProperty('embalses-points', 'circle-opacity', 1);
+        map.setPaintProperty('embalses-points', 'circle-stroke-opacity', 1);
+      }
+      if (map.getLayer('embalses-labels')) map.setPaintProperty('embalses-labels', 'text-opacity', 1);
+
+        });
+      }
+    }
+
+    // Callbacks de capítulo: modo exploración (definidos en config.js)
+    window.enableExploreMode = async function () {
+      setExploreMode(true);
+      await setupExploreUI();
+    };
+    window.disableExploreMode = function () {
+      setExploreMode(false);
+
+      // Limpia filtros para no afectar la narrativa
+      const riverSelect = document.getElementById('riverSelect');
+      const capRange = document.getElementById('capRange');
+      const capLabel = document.getElementById('capLabel');
+      if (riverSelect) riverSelect.value = '';
+      if (capRange) capRange.value = '0';
+      if (capLabel) capLabel.textContent = '≥ 0 hm³';
+
+      if (map.getLayer('embalses-points')) map.setFilter('embalses-points', null);
+      if (map.getLayer('embalses-labels')) map.setFilter('embalses-labels', null);
+
+      if (chartEmbalseMini) { chartEmbalseMini.destroy(); chartEmbalseMini = null; }
+
+      // Resetea heatmap y opacidades
+      const toggleHeatmap = document.getElementById('toggleHeatmap');
+      if (toggleHeatmap) toggleHeatmap.checked = false;
+      if (map.getLayer('embalses-heat')) map.setLayoutProperty('embalses-heat', 'visibility', 'none');
+      if (map.getLayer('embalses-points')) {
+        map.setPaintProperty('embalses-points', 'circle-opacity', 1);
+        map.setPaintProperty('embalses-points', 'circle-stroke-opacity', 1);
+      }
+      if (map.getLayer('embalses-labels')) map.setPaintProperty('embalses-labels', 'text-opacity', 1);
+
+      const hint = document.getElementById('miniChartHint');
+      if (hint) hint.textContent = 'Selecciona un embalse en el buscador para ver su evolución.';
+    };
+
+    /*
+      ==========================================================
+      11) INSET MAP (minimap) y MARKER opcional
+      ==========================================================
+      Son opciones de config.js
+    */
+    if (config.inset) {
+      map.addControl(new GlobeMinimap({ ...config.insetOptions }), config.insetPosition);
+    }
+
+    if (config.showMarkers) {
+      var marker = new mapboxgl.Marker({ color: config.markerColor });
+      marker.setLngLat(config.chapters[0].location.center).addTo(map);
+    }
+
+    /*
+      ==========================================================
+      12) SCROLLAMA (scrollytelling)
+      ==========================================================
+      Scrollama observa cada .step y dispara:
+      - onStepEnter: al entrar en un capítulo
+      - onStepExit: al salir
+    */
+    // Crea el controlador de scrollytelling (Scrollama).
+    var scroller = scrollama();
+
+    /*
+      ==========================================================
+      13) MAPA: fuentes + capas + eventos (load)
+      ==========================================================
+      Aquí añadimos GeoJSON y capas (polígonos, puntos, labels, highlight).
+    */
+    // Cuando el estilo del mapa está cargado, añade fuentes/capas y prepara la interacción.
+    map.on("load", function () {
+      // ====== FUENTES (SOURCES) ======
+      map.addSource('embalses', { type: 'geojson', data: 'data/embalses.geojson' });
+      map.addSource('embalses-polygons', { type: 'geojson', data: 'data/pol-embalses.geojson' });
+
+      // ====== CAPAS (LAYERS) ======
+      // Polígonos (lámina de agua)
+      map.addLayer({
+        id: 'embalses-polygons',
+        type: 'fill',
+        source: 'embalses-polygons',
+        paint: { 'fill-color': '#f03b20', 'fill-opacity': 0.12 }
+      });
+
+      // Polígonos destacados (highlight)
+      map.addLayer({
+        id: 'embalses-polygons-highlight',
+        type: 'fill',
+        source: 'embalses-polygons',
+        filter: ['==', ['get', 'nombre'], ''],
+        paint: { 'fill-color': '#f03b20', 'fill-opacity': 0.45 }
+      });
+
+      // Contorno
+      map.addLayer({
+        id: 'embalses-polygons-outline',
+        type: 'line',
+        source: 'embalses-polygons',
+        paint: { 'line-color': '#01497c', 'line-width': 1.5, 'line-opacity': 0.7 }
+      });
+
+      // Puntos (embalses)
+      map.addLayer({
+        id: 'embalses-points',
+        type: 'circle',
+        source: 'embalses',
+        paint: {
+          'circle-radius': 8,
+          'circle-color': '#0077b6',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Punto destacado (highlight)
+      map.addLayer({
+        id: 'embalses-highlight',
+        type: 'circle',
+        source: 'embalses',
+        filter: ['==', ['get', 'nombre'], ''],
+        paint: {
+          'circle-radius': 16,
+          'circle-color': '#ffb703',
+          'circle-opacity': 0.95,
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff'
+        }
+      });
+
+      // Labels
+      map.addLayer({
+        id: 'embalses-labels',
+        type: 'symbol',
+        source: 'embalses',
+        layout: {
+          'text-field': ['get', 'rotulo'],
+          'text-font': ['Open Sans Bold'],
+          'text-size': 14,
+          'text-offset': [0, 1.5],
+          'text-anchor': 'top',
+          'text-allow-overlap': true
+        },
+        paint: {
+          'text-color': '#003366',
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 2
+        }
+      });
+
+      // Label destacado
+      map.addLayer({
+        id: 'embalses-label-highlight',
+        type: 'symbol',
+        source: 'embalses',
+        filter: ['==', ['get', 'nombre'], ''],
+        layout: {
+          'text-field': ['get', 'rotulo'],
+          'text-font': ['Open Sans Bold'],
+          'text-size': 20,
+          'text-offset': [0, 1.5],
+          'text-anchor': 'top',
+          'text-allow-overlap': true
+        },
+        paint: {
+          'text-color': '#ffb703',
+          'text-halo-color': '#000000',
+          'text-halo-width': 2
+        }
+      });
+
+      // ====== EVENTOS DE INTERACCIÓN EN CAPAS ======
+      map.on('click', 'embalses-points', function (e) {
+        const properties = e.features[0].properties;
+        new mapboxgl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(
+            '<h3>' + properties.nombre + '</h3>' +
+            '<p><strong>Río:</strong> ' + properties.rio + '</p>' +
+            '<p><strong>Capacidad:</strong> ' + properties.capacidad + '</p>'
+          )
+          .addTo(map);
+      });
+
+      map.on('mouseenter', 'embalses-points', function () { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'embalses-points', function () { map.getCanvas().style.cursor = ''; });
+
+
+      // ====== POPUP EN POLÍGONOS (pol-embalses.geojson) ======
+// Muestra TODOS los atributos excepto Latitud y Longitud
+function buildPolygonPopupHTML(props) {
+
+  const excluded = new Set([
+    'Latitud','Longitud',
+    'latitud','longitud',
+    'LATITUD','LONGITUD',
+    'lat','lon','LAT','LON'
+  ]);
+
+  const title =
+    props?.nombre ||
+    props?.NOMBRE ||
+    props?.rotulo ||
+    props?.ROTULO ||
+    'Embalse';
+
+  let html = `
+    <div style="min-width:260px;max-width:420px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;">
+        ${title}
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+  `;
+
+  Object.entries(props || {}).forEach(([key, value]) => {
+    if (excluded.has(key)) return;
+    if (key === 'nombre' || key === 'NOMBRE') return;
+    if (value === null || value === undefined || String(value).trim() === '') return;
+
+    html += `
+      <tr>
+        <td style="padding:4px 6px;opacity:.75;vertical-align:top;">
+          ${key}
+        </td>
+        <td style="padding:4px 6px;vertical-align:top;">
+          <strong>${value}</strong>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `</table></div>`;
+  return html;
+}
+
+// Escuchamos tanto en la capa normal como en la highlight
+['embalses-polygons','embalses-polygons-highlight'].forEach(layerId => {
+
+  map.on('click', layerId, function(e) {
+    const feature = e.features && e.features[0];
+    if (!feature) return;
+
+    if (activePopup) activePopup.remove();
+
+    activePopup = new mapboxgl.Popup({
+      closeButton: true,
+      closeOnClick: true,
+      maxWidth: '420px'
+    })
+      .setLngLat(e.lngLat)
+      .setHTML(buildPolygonPopupHTML(feature.properties))
+      .addTo(map);
+  });
+
+  map.on('mouseenter', layerId, function () {
+    map.getCanvas().style.cursor = 'pointer';
+  });
+
+  map.on('mouseleave', layerId, function () {
     map.getCanvas().style.cursor = '';
+  });
 
-    if (navControlAdded) {
-        map.removeControl(navControl);
-        navControlAdded = false;
-    }
-};
+});
 
+      /*
+        ==========================================================
+        14) Scrollama: setup + callbacks
+        ==========================================================
+      */
+      scroller
+        .setup({
+          step: '.step',
+          offset: 0.5,
+          progress: true
+        })
+        .onStepEnter(async response => {
+          // Capítulo actual según el id del elemento
+          var current_chapter = config.chapters.findIndex(chap => chap.id === response.element.id);
+          var chapter = config.chapters[current_chapter];
 
+          response.element.classList.add('active');
 
+          // Progreso (panel inferior)
+          try {
+            const idx = current_chapter + 1;
+            const total = config.chapters.length;
+            const pt = document.getElementById('progressText');
+            const pb = document.getElementById('progressBar');
+            if (pt) pt.textContent = `Capítulo ${idx} / ${total}`;
+            if (pb) pb.style.width = `${Math.round((idx / total) * 100)}%`;
+          } catch (e) {}
 
+          // Mueve la cámara (flyTo por defecto)
+          map[chapter.mapAnimation || 'flyTo'](chapter.location);
 
-        // instantiate the scrollama
-        var scroller = scrollama();
+          // Marcador opcional
+          if (config.showMarkers) marker.setLngLat(chapter.location.center);
 
+          // Opacidades declarativas
+          if (chapter.onChapterEnter && chapter.onChapterEnter.length > 0) {
+            chapter.onChapterEnter.forEach(setLayerOpacity);
+          }
 
-        map.on("load", function () {
-            if (config.use3dTerrain) {
-                map.addSource('mapbox-dem', {
-                    'type': 'raster-dem',
-                    'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                    'tileSize': 512,
-                    'maxzoom': 14
-                });
-                // add the DEM source as a terrain layer with exaggerated height
-                map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
-
-                // add a sky layer that will show when the map is highly pitched
-                map.addLayer({
-                    'id': 'sky',
-                    'type': 'sky',
-                    'paint': {
-                        'sky-type': 'atmosphere',
-                        'sky-atmosphere-sun': [0.0, 0.0],
-                        'sky-atmosphere-sun-intensity': 15
-                    }
-                });
-            };
-
-
-            /* =========================================================
-               CAMBIO (DESAFIO 2): DIBUJAR POLÍGONOS DE EMBALSES + RESALTADO POR CAPÍTULO
-               - Lee el GeoJSON desde ./data/pol-embalses.geojson
-               - Crea una capa base (todos los polígonos) y una capa highlight (solo el del capítulo)
-               - El capítulo indica qué polígono resaltar con: chapter.polygonName (ver config.js)
-               ========================================================= */
-            map.addSource('embalses-pol', {
-                type: 'geojson',
-                data: './data/pol-embalses.geojson'
-            });
-
-            // Capa base: todos los embalses con un estilo suave
-            map.addLayer({
-                id: 'embalses-pol-fill',
-                type: 'fill',
-                source: 'embalses-pol',
-                paint: {
-                    'fill-color': 'rgba(0, 120, 255, 0.18)',
-                    'fill-outline-color': 'rgba(0, 120, 255, 0.9)',
-                    'fill-opacity': 1
-                }
-            });
-
-            // Capa highlight: se filtra al embalse activo del capítulo y cambia de color
-            map.addLayer({
-                id: 'embalses-pol-highlight',
-                type: 'fill',
-                source: 'embalses-pol',
-                // Inicialmente no muestra nada
-                filter: ['==', ['get', 'nombre'], ''],
-                paint: {
-                    'fill-color': '#e53935',
-                    'fill-outline-color': '#e53935',
-                    'fill-opacity': 0.45
-                }
-            });
-
-            // Asegura que las etiquetas queden por encima del polígono (si existe esa capa en tu estilo)
-            if (map.getLayer('embalses-labels')) {
-                map.moveLayer('embalses-pol-fill', 'embalses-labels');
-                map.moveLayer('embalses-pol-highlight', 'embalses-labels');
+          // Callback del capítulo (si existe)
+          if (chapter.callback) {
+            // Si la función existe en window, la ejecuta
+            if (typeof window[chapter.callback] === 'function') {
+              await window[chapter.callback]();
             }
+          }
 
+          // Rotación opcional
+          if (chapter.rotateAnimation) {
+            map.once('moveend', () => {
+              const rotateNumber = map.getBearing();
+              map.rotateTo(rotateNumber + 180, {
+                duration: 30000,
+                easing: function (t) { return t; }
+              });
+            });
+          }
 
-            // setup the instance, pass callback functions
-            scroller
-                .setup({
-                    step: '.step',
-                    offset: 0.5,
-                    progress: true
-                })
-                .onStepEnter(async response => {
-                    var current_chapter = config.chapters.findIndex(chap => chap.id === response.element.id);
-                    var chapter = config.chapters[current_chapter];
+          // Autoplay opcional
+          if (config.auto) {
+            var next_chapter = (current_chapter + 1) % config.chapters.length;
+            map.once('moveend', () => {
+              document.querySelectorAll('[data-scrollama-index="' + next_chapter.toString() + '"]')[0].scrollIntoView();
+            });
+          }
+        })
+        .onStepExit(response => {
+          var chapter = config.chapters.find(chap => chap.id === response.element.id);
+          response.element.classList.remove('active');
 
-                    response.element.classList.add('active');
-                    map[chapter.mapAnimation || 'flyTo'](chapter.location);
+          if (chapter.onChapterExit && chapter.onChapterExit.length > 0) {
+            chapter.onChapterExit.forEach(setLayerOpacity);
+          }
 
-                    if (config.showMarkers) {
+          if (chapter.callbackExit && typeof window[chapter.callbackExit] === 'function') {
+            window[chapter.callbackExit]();
+          }
+        });
 
-                        // Si el capítulo tiene polygonName (es un embalse), mostrar marker
-                        if (chapter.polygonName) {
-
-                            marker.getElement().style.display = '';
-
-                            marker.setLngLat(
-                                chapter.markerCenter || chapter.location.center
-                            );
-
-                        } else {
-                            // Capítulos sin embalse (intro, gráficos, explorar...)
-                            marker.getElement().style.display = 'none';
-                        }
-                    }
-                    /* =========================================================
-                       CAMBIO (DESAFIO 2): RESALTAR EL POLÍGONO DEL EMBALSE ACTIVO
-                       - chapter.polygonName debe coincidir EXACTAMENTE con properties.nombre del GeoJSON
-                         (ver ./data/pol-embalses.geojson)
-                       - chapter.polygonColor es el color del resaltado (opcional)
-                       ========================================================= */
-                    if (map.getLayer('embalses-pol-highlight')) {
-                        if (chapter.polygonName) {
-                            const col = chapter.polygonColor || '#e53935';
-                            map.setFilter('embalses-pol-highlight', ['==', ['get', 'nombre'], chapter.polygonName]);
-                            map.setPaintProperty('embalses-pol-highlight', 'fill-color', col);
-                            map.setPaintProperty('embalses-pol-highlight', 'fill-outline-color', col);
-                        } else {
-                            // Capítulos sin embalse (intro, gráficos, etc.): quitar resaltado
-                            map.setFilter('embalses-pol-highlight', ['==', ['get', 'nombre'], '']);
-                        }
-                    }
-                    if (chapter.onChapterEnter.length > 0) {
-                        chapter.onChapterEnter.forEach(setLayerOpacity);
-                    }
-/* =====================================================
-   CAMBIO (DESAFIO 2): activar/desactivar modo explorar por ID
-   - No depende de callback en config.js
-   - Si el capítulo es "explorar", el mapa se vuelve interactivo
-   - En el resto, se bloquea otra vez
-   ===================================================== */
-if (chapter.id === 'explorar') {
-    window.enableExploreMode();
-} else {
-    window.disableExploreMode();
-}
-
-/* (Opcional) si sigues usando callbacks para otros capítulos, mantenlos */
-if (chapter.callback && chapter.id !== 'explorar') {
-    window[chapter.callback]();
-}
-
-                if (chapter.rotateAnimation) {
-                        map.once('moveend', () => {
-                            const rotateNumber = map.getBearing();
-                            map.rotateTo(rotateNumber + 180, {
-                                duration: 30000, easing: function (t) {
-                                    return t;
-                                }
-                            });
-                        });
-                    }
-                    if (config.auto) {
-                        var next_chapter = (current_chapter + 1) % config.chapters.length;
-                        map.once('moveend', () => {
-                            document.querySelectorAll('[data-scrollama-index="' + next_chapter.toString() + '"]')[0].scrollIntoView();
-                        });
-                    }
-                })
-                .onStepExit(response => {
-                    /* CAMBIO (DESAFIO 2): al salir del capítulo explorar, bloquear mapa */
-                    if (response.element.id === 'explorar') {
-                        window.disableExploreMode();
-                    }
-
-                    var chapter = config.chapters.find(chap => chap.id === response.element.id);
-                    response.element.classList.remove('active');
-                    if (chapter.onChapterExit.length > 0) {
-                        chapter.onChapterExit.forEach(setLayerOpacity);
-                    }
-                });
-
-
-            if (config.auto) {
-                document.querySelectorAll('[data-scrollama-index="0"]')[0].scrollIntoView();
-            }
-        });    
-
-    </script>
-
+      // Autoplay: arranca en el primer step
+      if (config.auto) {
+        document.querySelectorAll('[data-scrollama-index="0"]')[0].scrollIntoView();
+      }
+    });
+  </script>
 </body>
-
 </html>

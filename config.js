@@ -1,25 +1,9 @@
 var config = {
-    style: 'mapbox://styles/mapbox/streets-v12',
-    
-
-    /**
-  
-        | Estilo                | Tipo    | Uso recomendado         |
-        | --------------------- | ------- | ----------------------- |
-        | streets-v12           | Vector  | Uso general             |
-        | outdoors-v12          | Vector  | Contexto físico/relieve |
-        | light-v11             | Vector  | Data storytelling       |
-        | dark-v11              | Vector  | Storytelling elegante   |
-        | navigation-day-v1     | Vector  | Navegación              |
-        | navigation-night-v1   | Vector  | Navegación nocturna     |
-        | satellite-v9          | Raster  | Imagen pura             |
-        | satellite-streets-v12 | Híbrido | Imagen + etiquetas      |
-
-     */
+    // style: 'mapbox://styles/mapbox/streets-v12',
     // leave commented to use Mapbox Standard Style
     accessToken: 'pk.eyJ1IjoiZm1pcmFuZGEyMiIsImEiOiJjbWx3MXNydjgwOGV5M2dxd3hsZjFidjgwIn0.6iBZ0B7cZsR4f5FYJoZM7w',
-    showMarkers: true,
-    markerColor: '#ff8800',
+    showMarkers: false,
+    markerColor: '#3FB1CE',
     //projection: 'equirectangular',
     //Read more about available projections here
     //https://docs.mapbox.com/mapbox-gl-js/example/projections/
@@ -34,10 +18,9 @@ var config = {
     title: 'Gigantes de agua en Extremadura',
     subtitle: 'Embalses del sistema Guadiana-Zújar',
     //byline: 'Fernando Miranda',
-    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: wikipedia.<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
+    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: autores indicados en cada recurso (uso educativo).<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
     chapters: [
-
-/** 1, Capítulo introducción */
+  /** 1, Capítulo introducción */
         {
             id: 'introduccion',
             alignment: 'left',
@@ -71,12 +54,7 @@ var config = {
             description: `
                 <p>Veamos la evolución en los últimos 25 años. Selecciona cada embalse para ver su evolución individual.</p>
 
-                <div class="flourish-embed flourish-chart" data-src="visualisation/27766133">
-                <noscript>
-                    <img src="https://public.flourish.studio/visualisation/27766133/thumbnail" width="100%" alt="visualization" />
-                </noscript>
-                </div>
-            `,
+<div class="flourish-embed flourish-chart" data-src="visualisation/27766133"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/27766133/thumbnail" width="100%" alt="visualization" /></noscript></div>            `,
             location: {
                 center: [-5.414837, 39.219733],
                 zoom: 9,
@@ -308,6 +286,31 @@ var config = {
         },
 
 
+        {
+  id: 'explorar',
+  alignment: 'left',
+  hidden: false,
+  title: 'Explora el mapa',
+  /*image: './assets/serena.jpg',
+  imageAlt: 'Vista panorámica del embalse de La Serena',*/
+  description: `
+    <p>Ahora puedes explorar libremente: zoom, rotación, búsqueda y filtros por río y capacidad. </p>
+  `,
+  location: {
+    center: [-5.414837, 39.219733],
+    zoom: 9,
+    pitch: 45,
+    bearing: -10
+  },
+  mapAnimation: 'flyTo',
+  rotateAnimation: false,
+  callback: 'enableExploreMode',
+  callbackExit: 'disableExploreMode',
+  onChapterEnter: [
+    { layer: 'embalses-labels', opacity: 1 }
+  ],
+  onChapterExit: []
+}
 
-        ]
-        };
+]
+};
