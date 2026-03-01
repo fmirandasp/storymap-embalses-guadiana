@@ -519,9 +519,10 @@ width: 100vw;
             }
 
             if (record.description) {
-                var para = document.createElement('p');
-                para.innerHTML = record.description;
-                chapter.appendChild(para);
+                var description = document.createElement('div');
+                description.className = 'chapter-description';
+                description.innerHTML = record.description;
+                chapter.appendChild(description);
             }
 
             container.setAttribute('id', record.id);
