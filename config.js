@@ -294,13 +294,13 @@ var config = {
   /*image: './assets/serena.jpg',
   imageAlt: 'Vista panorámica del embalse de La Serena',*/
   description: `
-    <p>Ahora puedes explorar libremente: zoom, rotación, búsqueda y filtros por río y capacidad. </p>
+    <p>Ahora puedes explorar libremente: zoom, rotación, navegación, etc. </p>
   `,
   location: {
     center: [-5.414837, 39.219733],
     zoom: 9,
-    pitch: 45,
-    bearing: -10
+    pitch: 0,
+    bearing: 0
   },
   mapAnimation: 'flyTo',
   rotateAnimation: false,
