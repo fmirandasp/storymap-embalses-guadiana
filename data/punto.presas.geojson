@@ -1,0 +1,70 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Embalse del Cíjara",
+        "rotulo": "Embalse de Cíjara",
+        "rio": "Guadiana",
+        "capacidad": "1505 hm³"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-5.011, 39.378]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Embalse de García de Sola",
+        "rotulo": "Embalse de García de Sola",
+        "rio": "Guadiana",
+        "capacidad": "554 hm³"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-5.185211, 39.146729]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Embalse de Orellana",
+        "rotulo": "Embalse de Orellana",
+        "rio": "Guadiana",
+        "capacidad": "808 hm³"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-5.536312, 38.986854]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Embalse de La Serena",
+        "rotulo": "Embalse de La Serena",
+        "rio": "Zújar",
+        "capacidad": "3219 hm³"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-5.412183, 38.911422]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Embalse del Zújar",
+        "rotulo": "Embalse del Zújar",
+        "rio": "Zújar",
+        "capacidad": "309 hm³"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-5.477636, 38.91811]
+      }
+    }
+  ]
+}
