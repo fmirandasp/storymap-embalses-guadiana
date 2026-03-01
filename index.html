@@ -4,15 +4,14 @@
 <head>
     <meta charset='utf-8' />
     <title>Mapbox Storytelling</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <link rel="icon" type="image/x-icon"
         href="https://raw.githubusercontent.com/mapbox/assembly/publisher-staging/src/svgs/mapbox.svg">
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js'></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css' rel='stylesheet' />
     <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-globe-minimap@1.2.0/dist/bundle.js"></script>
     <script src="https://unpkg.com/scrollama"></script>
-
-    <!-- Flourish: cargar UNA vez para que los embeds funcionen -->
+        <!-- Flourish: cargar UNA vez para que los embeds funcionen -->
     <script src="https://public.flourish.studio/resources/embed.js" defer></script>
 
     <style>
@@ -22,52 +21,54 @@
             font-family: sans-serif;
         }
 
-        
-        img { max-width: 100%; height: auto; }
-a,
+        a,
         a:hover,
         a:visited {
             color: #0071bc;
         }
 
         #map {
-top: 0;
-
-                        height: 100vh;
-            height: 100svh;
-            height: 100dvh;
-width: 100vw;
+            top: 0;
+            height: 100vh;
+            width: 100vw;
             position: fixed;
         }
 
+/* =====================================================
+   CAMBIO (DESAFIO 2): HEADER EN DOS COLUMNAS CON LOGO
+   ===================================================== */
+#header {
+    margin: auto;
+    width: 100%;
+    position: relative;
+    z-index: 5;
 
+    display: flex;               /* Dos columnas */
+    align-items: center;         /* Centrado vertical */
+    justify-content: center;     /* Centrado horizontal */
+    gap: 100px;                   /* Espacio entre logo y texto */
+    padding: 5px 0;
+}
+
+/* Columna del texto */
+#header-text {
+    text-align: left;
+}
+
+/* Columna del logo */
+#header-logo img {
+    height: 160px;   /* 🔥 AQUÍ CAMBIAS EL TAMAÑO DEL LOGO */
+}
+
+
+/**
         #header {
+            margin: auto;
             width: 100%;
             position: relative;
             z-index: 5;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            padding: 28px 40px;
-            gap: 24px;
         }
-
-
-        /* Header assets */
-        #header .logo{
-            max-height: 64px;
-            width: auto;
-            height: auto;
-        }
-        #header .header-text{
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
+            */
 
         #header h1,
         #header h2,
@@ -165,253 +166,100 @@ width: 100vw;
             touch-action: unset;
         }
 
-        /* ===== Flourish responsive (evita “saltos” raros en full width) ===== */
-        .flourish-embed {
-            width: 100%;
-            max-width: 100%;
+/* ===== TAMAÑOS PERSONALIZADOS PARA CADA GRÁFICO ===== */
+
+        /* Capítulo 2 */
+        #grafico-evolucion {
+            width: 60vw;
+            margin: 0 auto;
         }
 
-        /* ===== UI: leyenda / filtros / búsqueda / progreso ===== */
-        #map-ui {
-            position: fixed;
-            top: 12px;
-            right: 12px;
-            z-index: 6;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: min(340px, calc(100vw - 24px));
-            pointer-events: none;
-            /* solo los elementos internos interactúan */
+        /* Capítulo 3 */
+        #grafico-sunburst {
+            width: 45vw;
+            margin: 0 auto;
         }
 
-        #map-ui .panel {
-            pointer-events: auto;
-            border-radius: 14px;
-            padding: 12px 12px 10px;
-            background: rgba(10, 10, 10, 0.78);
-            color: #fff;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(8px);
-        }
+        /* Capítulo 4 */
+        #grafico-mapa {
+            width: 50vw;
+            margin: 0 auto;
+        }    
+        
+        
+/* =====================================================
+   CAMBIO (DESAFIO 2): LIGHTBOX DE IMÁGENES DENTRO DEL STORY
+   - Se abre al pinchar en la foto de capítulos "embalse"
+   - Se muestra grande pero sin “salirse del story”
+   ===================================================== */
 
-        #map-ui .panel h4 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-            letter-spacing: .2px;
-        }
+#story { position: relative; } /* asegura contexto para el overlay */
 
-        #legend .item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0;
-            font-size: 13px;
-        }
+.story-lightbox {
+    position: fixed;     /* IMPORTANTE: relativo a #story */
+    inset: 0;               /* ocupa solo el área del story */
+    z-index: 9998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(0,0,0,0.70);
+}
 
-        #legend .swatch {
-            width: 14px;
-            height: 14px;
-            border-radius: 999px;
-            border: 2px solid rgba(255, 255, 255, .9);
-        }
+.story-lightbox.is-open { display: flex; }
 
-        #legend .swatch.fill {
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, .25);
-        }
+.story-lightbox__img {
+    max-width: 96%;
+    max-height: 92vh;       /* grande, pero sin desbordar pantalla */
+    border-radius: 14px;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+}
 
-        #filters label {
-            display: block;
-            font-size: 12px;
-            opacity: .9;
-            margin-top: 8px;
-        }
-
-        #filters input[type="search"],
-        #filters select {
-            width: 100%;
-            margin-top: 6px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, .18);
-            background: rgba(255, 255, 255, .08);
-            color: #fff;
-            padding: 8px 10px;
-            outline: none;
-        }
-
-        #filters input[type="range"] {
-            width: 100%;
-            margin-top: 8px;
-        }
-
-        #filters .row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        #filters .muted {
-            font-size: 12px;
-            opacity: .85;
-            margin-top: 6px;
-        }
-
-        #filters button {
-            margin-top: 10px;
-            width: 100%;
-            padding: 9px 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, .18);
-            background: rgba(255, 255, 255, .10);
-            color: #fff;
-            cursor: pointer;
-        }
-
-        #filters button:hover {
-            background: rgba(255, 255, 255, .16);
-        }
-
-        #progress.panel {
-            position: fixed;
-            left: 12px;
-            bottom: 12px;
-            right: auto;
-            width: min(280px, calc(100vw - 24px));
-        }
-
-        #progress .bar {
-            height: 8px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, .14);
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        #progress .bar>div {
-            height: 100%;
-            width: 0%;
-            background: rgba(255, 255, 255, .85);
-        }
-
-        #progress .text {
-            font-size: 12px;
-            opacity: .9;
-        }
-
-        /* Mostrar/ocultar elementos cuando se activa el modo exploración */
-        body:not(.explore-mode) .explore-only {
-            display: none;
-        }
-
-        body.explore-mode .explore-only {
-            display: block;
-        }
-
-        /* Oculta controles nativos de Mapbox hasta modo exploración */
-        body:not(.explore-mode) .mapboxgl-ctrl-top-right {
-            display: none;
-        }
-
-        body:not(.explore-mode) .mapboxgl-ctrl-bottom-right {
-            display: none;
-        }
-
-        /* Responsive: apila el UI de forma más compacta */
-        @media (max-width: 640px) {
-            #map-ui {
-                right: 10px;
-                top: 10px;
-            }
-
-            #progress.panel {
-                left: 10px;
-                bottom: 10px;
-            }
-        }
-
-        /* Ajuste de ancho del Flourish (capítulo #grafico-evolucion) */
-        #grafico-evolucion .flourish-embed {
-            max-width: 1100px;   /* prueba 1000–1200 según te guste */
-            margin: 0 auto;      /* centra */
-        }
-
-        /* En pantallas grandes, un pelín de aire lateral */
-        @media (min-width: 900px) {
-        #grafico-evolucion .flourish-embed {
-            padding: 0 16px;   /* reduce la sensación "a sangre" */
-            box-sizing: border-box;
-            }
-        }
-
-        /* Ajuste de ancho del Flourish (capítulo #grafico-sunburst) */
-        #grafico-sunburst .flourish-embed {
-            max-width: 700px;   /* prueba 1000–1200 según te guste */
-            margin: 0 auto;      /* centra */
-        }
-
-        /* En pantallas grandes, un pelín de aire lateral */
-        @media (min-width: 900px) {
-        #grafico-sunburst .flourish-embed {
-            padding: 0 16px;   /* reduce la sensación "a sangre" */
-            box-sizing: border-box;
-            }
-        }
-
-        /* Ajuste de ancho del Flourish (capítulo #grafico-mapa) */
-        #grafico-mapa .flourish-embed {
-            max-width: 700px;   /* prueba 1000–1200 según te guste */
-            margin: 0 auto;      /* centra */
-        }
-
-        /* En pantallas grandes, un pelín de aire lateral */
-        @media (min-width: 900px) {
-        #grafico-sunburst .flourish-embed {
-            padding: 0 16px;   /* reduce la sensación "a sangre" */
-            box-sizing: border-box;
-            }
-        }
+.story-lightbox__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.9);
+    font-size: 14px;
+}
 
 
+/* =====================================================
+   CAMBIO (DESAFIO 2): EN MODO EXPLORAR, DEJAR PASAR LOS EVENTOS AL MAPA
+   - El story “tapa” el mapa: por eso no se puede arrastrar/zoom
+   - Con esta clase, el mapa recibe los eventos del ratón/táctil
+   ===================================================== */
+body.explore-mode #story {
+    pointer-events: none;
+}
+
+body.explore-mode #map {
+    pointer-events: auto;
+}
 
 
     
+/* =====================================================
+   FIX (DESAFIO 2): en modo explorar, poner el MAPA por encima
+   (z-index) y garantizar que reciba eventos
+   ===================================================== */
 
-        @media (max-width: 750px) {
-            #header{
-                flex-direction: column;
-                padding: 16px 14px;
-                gap: 10px;
-            }
+/* Estado normal: story por encima, mapa debajo */
+#map { z-index: 0; }
+#story { position: relative; z-index: 5; }
 
-            #header h1,
-            #header h2,
-            #header p{
-                padding: 0;
-                text-align: center;
-            }
+/* Modo explorar: mapa por encima del story */
+body.explore-mode #map { z-index: 10; }
+body.explore-mode #story { z-index: 0; }
 
-            #header h1{ font-size: 22px; }
-            #header h2{ font-size: 16px; }
-
-            #header .logo{
-                max-width: 140px;
-                width: 60vw;
-                max-height: none;
-            }
-
-            .step div{
-                padding: 16px 16px;
-                font-size: 14px;
-                line-height: 1.5;
-            }
-
-            /* Slightly smaller map viewport on mobile to leave room for header and content */
-            #map{
-                height: 55svh;
-                height: 55dvh;
-            }
-        }
+/* Además, en modo explorar el story NO captura eventos */
+body.explore-mode #story { pointer-events: none; }
+body.explore-mode #map { pointer-events: auto; }
 
 </style>
 </head>
@@ -463,28 +311,21 @@ width: 100vw;
         var features = document.createElement('div');
         features.setAttribute('id', 'features');
 
+
+
+        /**
         var header = document.createElement('div');
-
-
-        // LOGO
-        var logo = document.createElement('img');
-        logo.src = 'assets/LOGO VISUALIZACION DE DATOS.svg';
-        logo.classList.add('logo');
-        header.appendChild(logo);
-
-        var headerText = document.createElement('div');
-        headerText.classList.add('header-text');
 
         if (config.title) {
             var titleText = document.createElement('h1');
             titleText.innerText = config.title;
-            headerText.appendChild(titleText);
+            header.appendChild(titleText);
         }
 
         if (config.subtitle) {
             var subtitleText = document.createElement('h2');
             subtitleText.innerText = config.subtitle;
-            headerText.appendChild(subtitleText);
+            header.appendChild(subtitleText);
         }
 
         if (config.byline) {
@@ -493,13 +334,60 @@ width: 100vw;
             header.appendChild(bylineText);
         }
 
-        header.appendChild(headerText);
-
         if (header.innerText.length > 0) {
             header.classList.add(config.theme);
             header.setAttribute('id', 'header');
             story.appendChild(header);
         }
+*/
+
+        /* =====================================================
+        CAMBIO (DESAFIO 2): HEADER CON LOGO + TEXTO
+        ===================================================== */
+
+        var header = document.createElement('div');
+
+        if (config.title || config.subtitle || config.byline) {
+
+            // Contenedor logo
+            var logoContainer = document.createElement('div');
+            logoContainer.setAttribute('id', 'header-logo');
+
+            var logo = document.createElement('img');
+            logo.src = './assets/LOGO VISUALIZACION DE DATOS.svg';
+            logo.alt = 'Logotipo';
+            logoContainer.appendChild(logo);
+
+            // Contenedor texto
+            var textContainer = document.createElement('div');
+            textContainer.setAttribute('id', 'header-text');
+
+            if (config.title) {
+                var titleText = document.createElement('h1');
+                titleText.innerText = config.title;
+                textContainer.appendChild(titleText);
+            }
+
+            if (config.subtitle) {
+                var subtitleText = document.createElement('h2');
+                subtitleText.innerText = config.subtitle;
+                textContainer.appendChild(subtitleText);
+            }
+
+            if (config.byline) {
+                var bylineText = document.createElement('p');
+                bylineText.innerText = config.byline;
+                textContainer.appendChild(bylineText);
+            }
+
+            header.appendChild(logoContainer);
+            header.appendChild(textContainer);
+
+            header.classList.add(config.theme);
+            header.setAttribute('id', 'header');
+            story.appendChild(header);
+        }
+
 
         config.chapters.forEach((record, idx) => {
             var container = document.createElement('div');
@@ -514,14 +402,13 @@ width: 100vw;
             if (record.image) {
                 var image = new Image();
                 image.src = record.image;
-                image.alt = record.imageAlt || (record.title ? ('Imagen: ' + record.title) : 'Imagen del capítulo');
                 chapter.appendChild(image);
             }
 
             if (record.description) {
-                var para = document.createElement('p');
-                para.innerHTML = record.description;
-                chapter.appendChild(para);
+                var story = document.createElement('p');
+                story.innerHTML = record.description;
+                chapter.appendChild(story);
             }
 
             container.setAttribute('id', record.id);
@@ -529,6 +416,11 @@ width: 100vw;
             if (idx === 0) {
                 container.classList.add('active');
             }
+
+            /* CAMBIO (DESAFIO 2): marcar capítulos de embalse para activar lightbox solo ahí */
+if (record.polygonName) {
+    container.classList.add('is-embalse');
+}
 
             chapter.classList.add(config.theme);
             container.appendChild(chapter);
@@ -540,6 +432,53 @@ width: 100vw;
         });
 
         story.appendChild(features);
+
+        /* =====================================================
+   CAMBIO (DESAFIO 2): crear lightbox dentro de #story
+   ===================================================== */
+var lightbox = document.createElement('div');
+lightbox.className = 'story-lightbox';
+lightbox.innerHTML = `
+    <button class="story-lightbox__close" type="button" aria-label="Cerrar">Cerrar ✕</button>
+    <img class="story-lightbox__img" alt="Imagen ampliada">
+`;
+story.appendChild(lightbox);
+
+var lightboxImg = lightbox.querySelector('.story-lightbox__img');
+var lightboxClose = lightbox.querySelector('.story-lightbox__close');
+
+function openLightbox(src, altText) {
+    lightboxImg.src = src;
+    lightboxImg.alt = altText || 'Imagen ampliada';
+    lightbox.classList.add('is-open');
+}
+
+function closeLightbox() {
+    lightbox.classList.remove('is-open');
+    lightboxImg.src = '';
+}
+
+/* CAMBIO (DESAFIO 2): solo activar en imágenes de capítulos embalse */
+story.addEventListener('click', function (e) {
+    const img = e.target.closest('.step.is-embalse img');
+    if (!img) return;
+
+    // abre la misma imagen a gran tamaño
+    openLightbox(img.src, img.alt);
+});
+
+/* Cerrar al pulsar botón */
+lightboxClose.addEventListener('click', closeLightbox);
+
+/* Cerrar al clicar en el fondo oscuro (pero no sobre la imagen) */
+lightbox.addEventListener('click', function (e) {
+    if (e.target === lightbox) closeLightbox();
+});
+
+/* Cerrar con ESC */
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeLightbox();
+});
 
         var footer = document.createElement('div');
 
@@ -568,299 +507,20 @@ width: 100vw;
             projection: config.projection
         });
 
-        // Ensure the map reflows correctly on mobile orientation changes / resizes
-        window.addEventListener("resize", () => map.resize());
-        window.addEventListener("orientationchange", () => setTimeout(() => map.resize(), 200));
-
-        // ===== Interacción: habilitada pero desactivada por defecto (se activa en "modo exploración") =====
-        function disableMapInteractions() {
-            map.scrollZoom.disable();
-            map.boxZoom.disable();
-            map.dragRotate.disable();
-            map.dragPan.disable();
-            map.keyboard.disable();
-            map.doubleClickZoom.disable();
-            map.touchZoomRotate.disable();
-        }
-
-        function enableMapInteractions() {
-            map.scrollZoom.enable();
-            map.boxZoom.enable();
-            map.dragRotate.enable();
-            map.dragPan.enable();
-            map.keyboard.enable();
-            map.doubleClickZoom.enable();
-            map.touchZoomRotate.enable();
-        }
-
-        // Controles (se ocultan por CSS hasta "modo exploración")
-        map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
-        map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-        map.addControl(new mapboxgl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
-
-        disableMapInteractions();
-
-        // ===== UI flotante (leyenda + filtros + búsqueda + progreso) =====
-
-        function createMapUI() {
-            const ui = document.createElement('div');
-            ui.id = 'map-ui';
-
-            // Leyenda
-            const legend = document.createElement('div');
-            legend.id = 'legend';
-            legend.className = 'panel explore-only';
-            legend.innerHTML = `
-        <h4>Leyenda</h4>
-        <div class="item"><span class="swatch" style="background:#0077b6;"></span><span>Embalse (punto)</span></div>
-        <div class="item"><span class="swatch" style="background:#ffb703;"></span><span>Embalse destacado</span></div>
-        <div class="item"><span class="swatch fill" style="background:#f03b20; opacity:.35;"></span><span>Lámina de agua (polígono)</span></div>
-        <div class="item"><span class="swatch fill" style="background:transparent; border:2px solid #01497c;"></span><span>Contorno</span></div>
-      `;
-
-            // Filtros + búsqueda
-            const filters = document.createElement('div');
-            filters.id = 'filters';
-            filters.className = 'panel explore-only';
-            filters.innerHTML = `
-        <h4>Explorar</h4>
-
-        <label for="searchEmbalse">Buscar embalse</label>
-        <input id="searchEmbalse" type="search" placeholder="Ej.: Cíjara, Orellana…" list="embalseList" autocomplete="off"/>
-        <datalist id="embalseList"></datalist>
-
-        <label for="riverSelect">Río</label>
-        <select id="riverSelect">
-          <option value="">Todos</option>
-        </select>
-
-        <label for="capRange">Capacidad mínima (hm³)</label>
-        <input id="capRange" type="range" min="0" max="100" step="10" value="0"/>
-        <div class="row">
-          <div class="muted" id="capLabel">≥ 0 hm³</div>
-          <div class="muted" style="margin-left:auto" id="countLabel"></div>
-        </div>
-
-        <label style="margin-top:10px; display:flex; align-items:center; gap:8px;">
-          <input id="toggleHeatmap" type="checkbox" style="width:auto; margin:0;" />
-          <span>Ver densidad (heatmap)</span>
-        </label>
-
-        <button id="resetFilters" type="button">Restablecer filtros</button>
-      `;
-
-            // Progreso (siempre visible)
-            const progress = document.createElement('div');
-            progress.id = 'progress';
-            progress.className = 'panel';
-            progress.innerHTML = `
-        <div class="text" id="progressText">Capítulo 1 / ${config.chapters.length}</div>
-        <div class="bar"><div id="progressBar"></div></div>
-      `;
-
-            ui.appendChild(legend);
-            ui.appendChild(filters);
-
-            document.body.appendChild(ui);
-            return { ui, legend, filters, progress };
-        }
+/* BLOQUEAR INTERACCIÓN INICIAL (modo storytelling) */
+map.scrollZoom.disable();
+map.doubleClickZoom.disable();
+map.touchZoomRotate.disable();
+map.dragPan.disable();
+map.dragRotate.disable();
+map.touchPitch.disable();
+map.boxZoom.disable();
+map.keyboard.disable();
 
 
-        const uiRefs = createMapUI();
 
-        function setExploreMode(isOn) {
-            document.body.classList.toggle('explore-mode', !!isOn);
-            if (isOn) enableMapInteractions();
-            else disableMapInteractions();
-        }
 
-        // ===== Datos + filtros =====
-        function parseCapacidadToNumber(value) {
-            if (value == null) return null;
-            const s = String(value).replace(',', '.');
-            const m = s.match(/[-+]?\d*\.?\d+/);
-            if (!m) return null;
-            const n = Number(m[0]);
-            return Number.isFinite(n) ? n : null;
-        }
 
-        async function ensureEmbalsesDataEnriched() {
-            const data = await loadEmbalsesData();
-            let changed = false;
-
-            data.features.forEach(f => {
-                if (!f.properties) f.properties = {};
-                if (typeof f.properties.capacidad_num !== 'number') {
-                    const n = parseCapacidadToNumber(f.properties.capacidad);
-                    if (n != null) {
-                        f.properties.capacidad_num = n;
-                        changed = true;
-                    }
-                }
-            });
-
-            // Actualiza la fuente del mapa con el campo numérico para filtros
-            const src = map.getSource('embalses');
-            if (src && changed) src.setData(data);
-
-            return data;
-        }
-
-        function buildExploreUIFromData(data) {
-            const list = document.getElementById('embalseList');
-            const riverSelect = document.getElementById('riverSelect');
-            const capRange = document.getElementById('capRange');
-            const capLabel = document.getElementById('capLabel');
-
-            // datalist
-            list.innerHTML = '';
-            const names = data.features
-                .map(f => f.properties?.nombre)
-                .filter(Boolean)
-                .sort((a, b) => a.localeCompare(b, 'es'));
-            names.forEach(n => {
-                const opt = document.createElement('option');
-                opt.value = n;
-                list.appendChild(opt);
-            });
-
-            // ríos
-            const rivers = Array.from(new Set(
-                data.features.map(f => f.properties?.rio).filter(Boolean)
-            )).sort((a, b) => a.localeCompare(b, 'es'));
-
-            // limpia (mantén "Todos")
-            riverSelect.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
-            rivers.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r;
-                opt.textContent = r;
-                riverSelect.appendChild(opt);
-            });
-
-            // rango capacidad
-            const caps = data.features
-                .map(f => f.properties?.capacidad_num)
-                .filter(n => typeof n === 'number' && Number.isFinite(n));
-
-            const maxCap = caps.length ? Math.ceil(Math.max(...caps) / 10) * 10 : 100;
-            capRange.max = String(maxCap);
-            capRange.step = String(Math.max(10, Math.round(maxCap / 20)));
-            capRange.value = "0";
-            capLabel.textContent = `≥ 0 hm³`;
-        }
-
-        function applyEmbalsesFilters() {
-            const river = document.getElementById('riverSelect').value;
-            const minCap = Number(document.getElementById('capRange').value || 0);
-
-            // filtro Mapbox GL
-            const filter = ['all'];
-
-            if (river) {
-                filter.push(['==', ['get', 'rio'], river]);
-            }
-            if (Number.isFinite(minCap) && minCap > 0) {
-                filter.push(['>=', ['coalesce', ['get', 'capacidad_num'], 0], minCap]);
-            }
-
-            // aplica a puntos y labels
-            if (map.getLayer('embalses-points')) map.setFilter('embalses-points', filter);
-            if (map.getLayer('embalses-labels')) map.setFilter('embalses-labels', filter);
-
-            // contador
-            if (embalsesData?.features) {
-                const count = embalsesData.features.filter(f => {
-                    const rioOk = !river || f.properties?.rio === river;
-                    const capOk = !(minCap > 0) || (Number(f.properties?.capacidad_num || 0) >= minCap);
-                    return rioOk && capOk;
-                }).length;
-                const countLabel = document.getElementById('countLabel');
-                if (countLabel) countLabel.textContent = `${count} embalses`;
-            }
-        }
-
-        async function setupExploreUI() {
-            const data = await ensureEmbalsesDataEnriched();
-            buildExploreUIFromData(data);
-            applyEmbalsesFilters();
-
-            const search = document.getElementById('searchEmbalse');
-            const riverSelect = document.getElementById('riverSelect');
-            const capRange = document.getElementById('capRange');
-            const capLabel = document.getElementById('capLabel');
-            const resetBtn = document.getElementById('resetFilters');
-
-            // listeners (evita duplicar)
-            if (!search.dataset.bound) {
-                search.dataset.bound = "1";
-                search.addEventListener('change', async () => {
-                    const name = search.value?.trim();
-                    if (!name) return;
-
-                    const data = await ensureEmbalsesDataEnriched();
-                    const f = data.features.find(x => x.properties?.nombre === name);
-                    if (!f) return;
-
-                    const coords = f.geometry?.coordinates;
-                    if (!coords) return;
-
-                    // vuelo + popup + highlight
-                    map.flyTo({ center: coords, zoom: Math.max(map.getZoom(), 10), speed: 0.9 });
-                    highlightEmbalse(name);
-                    highlightLabel(name);
-                    await showEmbalsePopup(name);
-                });
-            }
-
-            if (!riverSelect.dataset.bound) {
-                riverSelect.dataset.bound = "1";
-                riverSelect.addEventListener('change', () => applyEmbalsesFilters());
-            }
-
-            if (!capRange.dataset.bound) {
-                capRange.dataset.bound = "1";
-                capRange.addEventListener('input', () => {
-                    capLabel.textContent = `≥ ${capRange.value} hm³`;
-                    applyEmbalsesFilters();
-                });
-            }
-
-            if (!resetBtn.dataset.bound) {
-                resetBtn.dataset.bound = "1";
-                resetBtn.addEventListener('click', () => {
-                    document.getElementById('searchEmbalse').value = '';
-                    riverSelect.value = '';
-                    capRange.value = '0';
-                    capLabel.textContent = '≥ 0 hm³';
-                    applyEmbalsesFilters();
-                    clearHighlight();
-                    clearHighlightLabel();
-                    closeEmbalsePopup();
-                });
-            }
-        }
-
-        // Callbacks de capítulo: modo exploración
-        window.enableExploreMode = async function () {
-            setExploreMode(true);
-            await setupExploreUI();
-        };
-
-        window.disableExploreMode = function () {
-            setExploreMode(false);
-
-            // Limpia filtros (para no afectar narrativa)
-            const riverSelect = document.getElementById('riverSelect');
-            const capRange = document.getElementById('capRange');
-            const capLabel = document.getElementById('capLabel');
-            if (riverSelect) riverSelect.value = '';
-            if (capRange) capRange.value = '0';
-            if (capLabel) capLabel.textContent = '≥ 0 hm³';
-
-            if (map.getLayer('embalses-points')) map.setFilter('embalses-points', null);
-            if (map.getLayer('embalses-labels')) map.setFilter('embalses-labels', null);
-        };
 
 
         // Create a inset map if enabled in config.js
@@ -873,329 +533,147 @@ width: 100vw;
 
         if (config.showMarkers) {
             var marker = new mapboxgl.Marker({ color: config.markerColor });
-            marker.setLngLat(config.chapters[0].location.center).addTo(map);
+            marker.setLngLat(
+        config.chapters[0].markerCenter || config.chapters[0].location.center
+    ).addTo(map);
         }
+
+/* =====================================================
+   CAMBIO (DESAFIO 2): MODO EXPLORAR MAPA EN EL ÚLTIMO CAPÍTULO
+   - Activa zoom, mover, rotar, teclado, etc. SOLO en "Explora el mapa"
+   - Al salir de ese capítulo, vuelve a dejar el mapa bloqueado
+   ===================================================== */
+
+// Control de navegación (zoom +/- y brújula). Se añade solo en modo explorar.
+var navControl = new mapboxgl.NavigationControl({ visualizePitch: true });
+var navControlAdded = false;
+
+// Activa interacción
+window.enableExploreMode = function () {
+    /* CAMBIO: dejar que el mapa reciba eventos (el story los estaba bloqueando) */
+    document.body.classList.add('explore-mode');
+
+    /* FIX: asegurar que el canvas recibe eventos */
+    map.getCanvas().style.pointerEvents = 'auto';
+
+    map.scrollZoom.enable();
+    map.doubleClickZoom.enable();
+    map.touchZoomRotate.enable();
+    map.dragPan.enable();
+    map.dragRotate.enable();
+    map.touchPitch.enable();
+    map.boxZoom.enable();
+    map.keyboard.enable();
+
+    map.getCanvas().style.cursor = 'grab';
+
+    if (!navControlAdded) {
+        map.addControl(navControl, 'top-right');
+        navControlAdded = true;
+    }
+};
+
+window.disableExploreMode = function () {
+    /* CAMBIO: volver al modo storytelling (story vuelve a recibir eventos) */
+    document.body.classList.remove('explore-mode');
+
+    /* FIX: restaurar pointer-events del canvas */
+    map.getCanvas().style.pointerEvents = '';
+
+    map.scrollZoom.disable();
+    map.doubleClickZoom.disable();
+    map.touchZoomRotate.disable();
+    map.dragPan.disable();
+    map.dragRotate.disable();
+    map.touchPitch.disable();
+    map.boxZoom.disable();
+    map.keyboard.disable();
+
+    map.getCanvas().style.cursor = '';
+
+    if (navControlAdded) {
+        map.removeControl(navControl);
+        navControlAdded = false;
+    }
+};
+
+
+
+
 
         // instantiate the scrollama
-
         var scroller = scrollama();
 
-        /* ===========================
-           FUNCIONES HIGHLIGHT + POPUP
-        =========================== */
-
-        let activePopup = null;
-        let embalsesData = null;
-
-        async function loadEmbalsesData() {
-            if (embalsesData) return embalsesData;
-            const response = await fetch('data/embalses.geojson');
-            embalsesData = await response.json();
-            return embalsesData;
-        }
-
-        function highlightEmbalse(nombre) {
-            if (!map.getLayer('embalses-highlight')) return;
-            map.setFilter('embalses-highlight', [
-                '==',
-                ['get', 'nombre'],
-                nombre
-            ]);
-        }
-
-        function highlightLabel(nombre) {
-            if (!map.getLayer('embalses-label-highlight')) return;
-
-            map.setFilter('embalses-label-highlight', [
-                '==',
-                ['get', 'nombre'],
-                nombre
-            ]);
-        }
-
-        function clearHighlightLabel() {
-            if (!map.getLayer('embalses-label-highlight')) return;
-
-            map.setFilter('embalses-label-highlight', [
-                '==',
-                ['get', 'nombre'],
-                ''
-            ]);
-        }
-
-        function clearHighlight() {
-            if (!map.getLayer('embalses-highlight')) return;
-            map.setFilter('embalses-highlight', [
-                '==',
-                ['get', 'nombre'],
-                ''
-            ]);
-        }
-
-        function highlightEmbalsePolygon(nombre) {
-            if (!map.getLayer('embalses-polygons-highlight')) return;
-
-            map.setFilter('embalses-polygons-highlight', [
-                '==',
-                ['get', 'nombre'],
-                nombre
-            ]);
-        }
-
-        function clearEmbalsePolygonHighlight() {
-            if (!map.getLayer('embalses-polygons-highlight')) return;
-
-            map.setFilter('embalses-polygons-highlight', [
-                '==',
-                ['get', 'nombre'],
-                ''
-            ]);
-        }
-
-        async function showEmbalsePopup(nombre) {
-            const data = await loadEmbalsesData();
-            const feature = data.features.find(
-                f => f.properties && f.properties.nombre === nombre
-            );
-            if (!feature) return;
-
-            const coords = feature.geometry.coordinates;
-            const props = feature.properties;
-
-            if (activePopup) activePopup.remove();
-
-            activePopup = new mapboxgl.Popup({
-                closeButton: true,
-                closeOnClick: false
-            })
-                .setLngLat(coords)
-                .setHTML(
-                    '<h3>' + props.nombre + '</h3>' +
-                    '<p><strong>Río:</strong> ' + props.rio + '</p>' +
-                    '<p><strong>Capacidad:</strong> ' + props.capacidad + '</p>'
-                )
-                .addTo(map);
-        }
-
-        function closeEmbalsePopup() {
-            if (activePopup) {
-                activePopup.remove();
-                activePopup = null;
-            }
-        }
-
-
-        /* === CALLBACKS CAPÍTULOS === */
-
-        window.onCijaraEnter = async function () {
-            highlightEmbalse('Cíjara');
-            highlightEmbalsePolygon('Embalse de Cíjara');
-            highlightLabel('Cíjara');
-            await showEmbalsePopup('Cíjara');
-        };
-
-        window.onCijaraExit = function () {
-            clearHighlight();
-            clearEmbalsePolygonHighlight();
-            clearHighlightLabel();
-            closeEmbalsePopup();
-        };
-
-        window.onGarciaDeSolaEnter = async function () {
-            highlightEmbalse('García de Sola');
-            highlightEmbalsePolygon('Embalse de García de Sola');
-            highlightLabel('García de Sola');
-            await showEmbalsePopup('García de Sola');
-        };
-
-        window.onGarciaDeSolaExit = function () {
-            clearHighlight();
-            clearEmbalsePolygonHighlight();
-            clearHighlightLabel();
-            closeEmbalsePopup();
-        };
-
-        window.onOrellanaEnter = async function () {
-            highlightEmbalse('Orellana');
-            highlightEmbalsePolygon('Embalse de Orellana');
-            highlightLabel('Orellana');
-            await showEmbalsePopup('Orellana');
-        };
-
-        window.onOrellanaExit = function () {
-            clearHighlight();
-            clearEmbalsePolygonHighlight();
-            clearHighlightLabel();
-            closeEmbalsePopup();
-        };
-
-        window.onLaSerenaEnter = async function () {
-            highlightEmbalse('La Serena');
-            highlightEmbalsePolygon('Embalse de la Serena');
-            highlightLabel('La Serena');
-            await showEmbalsePopup('La Serena');
-        };
-
-        window.onLaSerenaExit = function () {
-            clearHighlight();
-            clearEmbalsePolygonHighlight();
-            clearHighlightLabel();
-            closeEmbalsePopup();
-        };
-
-        window.onZujarEnter = async function () {
-            highlightEmbalse('Zújar');
-            highlightEmbalsePolygon('Embalse del Zújar');
-            highlightLabel('Zújar');
-            await showEmbalsePopup('Zújar');
-        };
-
-        window.onZujarExit = function () {
-            clearHighlight();
-            clearEmbalsePolygonHighlight();
-            clearHighlightLabel();
-            closeEmbalsePopup();
-        };
 
         map.on("load", function () {
+            if (config.use3dTerrain) {
+                map.addSource('mapbox-dem', {
+                    'type': 'raster-dem',
+                    'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                    'tileSize': 512,
+                    'maxzoom': 14
+                });
+                // add the DEM source as a terrain layer with exaggerated height
+                map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
 
-            // ====== EMBALSES (GeoJSON + capa + popups) ======
-            map.addSource('embalses', {
+                // add a sky layer that will show when the map is highly pitched
+                map.addLayer({
+                    'id': 'sky',
+                    'type': 'sky',
+                    'paint': {
+                        'sky-type': 'atmosphere',
+                        'sky-atmosphere-sun': [0.0, 0.0],
+                        'sky-atmosphere-sun-intensity': 15
+                    }
+                });
+            };
+
+
+            /* =========================================================
+               CAMBIO (DESAFIO 2): DIBUJAR POLÍGONOS DE EMBALSES + RESALTADO POR CAPÍTULO
+               - Lee el GeoJSON desde ./data/pol-embalses.geojson
+               - Crea una capa base (todos los polígonos) y una capa highlight (solo el del capítulo)
+               - El capítulo indica qué polígono resaltar con: chapter.polygonName (ver config.js)
+               ========================================================= */
+            map.addSource('embalses-pol', {
                 type: 'geojson',
-                data: 'data/embalses.geojson'
+                data: './data/pol-embalses.geojson'
             });
 
-            map.addSource('embalses-polygons', {
-                type: 'geojson',
-                data: 'data/pol-embalses.geojson'
-            });
-
+            // Capa base: todos los embalses con un estilo suave
             map.addLayer({
-                id: 'embalses-polygons',
+                id: 'embalses-pol-fill',
                 type: 'fill',
-                source: 'embalses-polygons',
+                source: 'embalses-pol',
                 paint: {
-                    'fill-color': '#f03b20',
-
-                    //'#4ea8de',
-                    'fill-opacity': 0.12
+                    'fill-color': 'rgba(0, 120, 255, 0.18)',
+                    'fill-outline-color': 'rgba(0, 120, 255, 0.9)',
+                    'fill-opacity': 1
                 }
             });
 
+            // Capa highlight: se filtra al embalse activo del capítulo y cambia de color
             map.addLayer({
-                id: 'embalses-polygons-highlight',
+                id: 'embalses-pol-highlight',
                 type: 'fill',
-                source: 'embalses-polygons',
+                source: 'embalses-pol',
+                // Inicialmente no muestra nada
                 filter: ['==', ['get', 'nombre'], ''],
                 paint: {
-                    'fill-color': '#f03b20',
-
-                    //'#ffb703',
+                    'fill-color': '#e53935',
+                    'fill-outline-color': '#e53935',
                     'fill-opacity': 0.45
                 }
             });
 
-            map.addLayer({
-                id: 'embalses-polygons-outline',
-                type: 'line',
-                source: 'embalses-polygons',
-                paint: {
-                    'line-color': '#01497c',
-                    'line-width': 1.5,
-                    'line-opacity': 0.7
-                }
-            });
-
-            map.addLayer({
-                id: 'embalses-points',
-                type: 'circle',
-                source: 'embalses',
-                paint: {
-                    'circle-radius': 8,
-                    'circle-color': '#0077b6',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
-                }
-            });
-
-            // Capa de resaltado (para capítulos)
-            map.addLayer({
-                id: 'embalses-highlight',
-                type: 'circle',
-                source: 'embalses',
-                filter: ['==', ['get', 'nombre'], ''],
-                paint: {
-                    'circle-radius': 16,
-                    'circle-color': '#ffb703',
-                    'circle-opacity': 0.95,
-                    'circle-stroke-width': 3,
-                    'circle-stroke-color': '#ffffff'
-                }
-            });
-
-            // Rótulos
-            map.addLayer({
-                id: 'embalses-labels',
-                type: 'symbol',
-                source: 'embalses',
-                layout: {
-                    'text-field': ['get', 'rotulo'],
-                    'text-font': ['Open Sans Bold'],
-                    'text-size': 14,
-                    'text-offset': [0, 1.5],
-                    'text-anchor': 'top',
-                    'text-allow-overlap': true
-                },
-                paint: {
-                    'text-color': '#003366',
-                    'text-halo-color': '#ffffff',
-                    'text-halo-width': 2
-                }
-            });
+            // Asegura que las etiquetas queden por encima del polígono (si existe esa capa en tu estilo)
+            if (map.getLayer('embalses-labels')) {
+                map.moveLayer('embalses-pol-fill', 'embalses-labels');
+                map.moveLayer('embalses-pol-highlight', 'embalses-labels');
+            }
 
 
-            map.addLayer({
-                id: 'embalses-label-highlight',
-                type: 'symbol',
-                source: 'embalses',
-                filter: ['==', ['get', 'nombre'], ''],
-                layout: {
-                    'text-field': ['get', 'rotulo'],
-                    'text-font': ['Open Sans Bold'],
-                    'text-size': 20,          // MÁS GRANDE
-                    'text-offset': [0, 1.5],
-                    'text-anchor': 'top',
-                    'text-allow-overlap': true
-                },
-                paint: {
-                    'text-color': '#ffb703',  // COLOR DESTACADO
-                    'text-halo-color': '#000000',
-                    'text-halo-width': 2
-                }
-            });
-
-            map.on('click', 'embalses-points', function (e) {
-                const properties = e.features[0].properties;
-
-                new mapboxgl.Popup()
-                    .setLngLat(e.lngLat)
-                    .setHTML(
-                        '<h3>' + properties.nombre + '</h3>' +
-                        '<p><strong>Río:</strong> ' + properties.rio + '</p>' +
-                        '<p><strong>Capacidad:</strong> ' + properties.capacidad + '</p>'
-                    )
-                    .addTo(map);
-            });
-
-            map.on('mouseenter', 'embalses-points', function () {
-                map.getCanvas().style.cursor = 'pointer';
-            });
-
-            map.on('mouseleave', 'embalses-points', function () {
-                map.getCanvas().style.cursor = '';
-            });
-
-            // ====== SCROLLAMA (plantilla original) ======
+            // setup the instance, pass callback functions
             scroller
                 .setup({
                     step: '.step',
@@ -1207,34 +685,68 @@ width: 100vw;
                     var chapter = config.chapters[current_chapter];
 
                     response.element.classList.add('active');
-
-                    // Progreso
-                    try {
-                        const idx = current_chapter + 1;
-                        const total = config.chapters.length;
-                        const pt = document.getElementById('progressText');
-                        const pb = document.getElementById('progressBar');
-                        if (pt) pt.textContent = `Capítulo ${idx} / ${total}`;
-                        if (pb) pb.style.width = `${Math.round((idx / total) * 100)}%`;
-                    } catch (e) { }
-
                     map[chapter.mapAnimation || 'flyTo'](chapter.location);
 
                     if (config.showMarkers) {
-                        marker.setLngLat(chapter.location.center);
+
+                        // Si el capítulo tiene polygonName (es un embalse), mostrar marker
+                        if (chapter.polygonName) {
+
+                            marker.getElement().style.display = '';
+
+                            marker.setLngLat(
+                                chapter.markerCenter || chapter.location.center
+                            );
+
+                        } else {
+                            // Capítulos sin embalse (intro, gráficos, explorar...)
+                            marker.getElement().style.display = 'none';
+                        }
+                    }
+                    /* =========================================================
+                       CAMBIO (DESAFIO 2): RESALTAR EL POLÍGONO DEL EMBALSE ACTIVO
+                       - chapter.polygonName debe coincidir EXACTAMENTE con properties.nombre del GeoJSON
+                         (ver ./data/pol-embalses.geojson)
+                       - chapter.polygonColor es el color del resaltado (opcional)
+                       ========================================================= */
+                    if (map.getLayer('embalses-pol-highlight')) {
+                        if (chapter.polygonName) {
+                            const col = chapter.polygonColor || '#e53935';
+                            map.setFilter('embalses-pol-highlight', ['==', ['get', 'nombre'], chapter.polygonName]);
+                            map.setPaintProperty('embalses-pol-highlight', 'fill-color', col);
+                            map.setPaintProperty('embalses-pol-highlight', 'fill-outline-color', col);
+                        } else {
+                            // Capítulos sin embalse (intro, gráficos, etc.): quitar resaltado
+                            map.setFilter('embalses-pol-highlight', ['==', ['get', 'nombre'], '']);
+                        }
                     }
                     if (chapter.onChapterEnter.length > 0) {
                         chapter.onChapterEnter.forEach(setLayerOpacity);
                     }
-                    if (chapter.callback) {
-                        window[chapter.callback]();
-                    }
-                    if (chapter.rotateAnimation) {
+/* =====================================================
+   CAMBIO (DESAFIO 2): activar/desactivar modo explorar por ID
+   - No depende de callback en config.js
+   - Si el capítulo es "explorar", el mapa se vuelve interactivo
+   - En el resto, se bloquea otra vez
+   ===================================================== */
+if (chapter.id === 'explorar') {
+    window.enableExploreMode();
+} else {
+    window.disableExploreMode();
+}
+
+/* (Opcional) si sigues usando callbacks para otros capítulos, mantenlos */
+if (chapter.callback && chapter.id !== 'explorar') {
+    window[chapter.callback]();
+}
+
+                if (chapter.rotateAnimation) {
                         map.once('moveend', () => {
                             const rotateNumber = map.getBearing();
                             map.rotateTo(rotateNumber + 180, {
-                                duration: 30000,
-                                easing: function (t) { return t; }
+                                duration: 30000, easing: function (t) {
+                                    return t;
+                                }
                             });
                         });
                     }
@@ -1246,22 +758,24 @@ width: 100vw;
                     }
                 })
                 .onStepExit(response => {
+                    /* CAMBIO (DESAFIO 2): al salir del capítulo explorar, bloquear mapa */
+                    if (response.element.id === 'explorar') {
+                        window.disableExploreMode();
+                    }
+
                     var chapter = config.chapters.find(chap => chap.id === response.element.id);
                     response.element.classList.remove('active');
                     if (chapter.onChapterExit.length > 0) {
                         chapter.onChapterExit.forEach(setLayerOpacity);
                     }
-                    if (chapter.callbackExit) {
-                        window[chapter.callbackExit]();
-                    }
                 });
+
 
             if (config.auto) {
                 document.querySelectorAll('[data-scrollama-index="0"]')[0].scrollIntoView();
             }
+        });    
 
-        });
-        // <-- un único cierre del map.on("load", ...)
     </script>
 
 </body>
