@@ -18,7 +18,7 @@ var config = {
     title: 'Gigantes de agua en Extremadura',
     subtitle: 'Embalses del sistema Guadiana-Zújar',
     //byline: 'Fernando Miranda',
-    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: Wikipedia.<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
+    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: autores indicados en cada recurso (uso educativo).<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
     chapters: [
   /** 1, Capítulo introducción */
         {
@@ -119,7 +119,33 @@ var config = {
         onChapterExit: []
         },
 
-/** 5, Capítulo Cijara */   
+/** 5, Capítulo gráfico capacidad embalses */
+        {
+        id: 'grafico-capacidad',
+        alignment: 'center',
+        hidden: false,
+        title: 'Evolución semanal de la capacidad de los embalses (2024–2026) y media de la última década',
+        description: `
+            <p>Selecciona el embalse para comparar su volumen actual con los dos años anteriores, la media de los últimos diez años y su capacidad máxima.</p>
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/27861177"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/27861177/thumbnail" width="100%" alt="visualization" /></noscript></div>
+        `,
+        location: {
+            center: [-5.414837, 39.219733],
+            zoom: 9,
+            pitch: 0,
+            bearing: 0
+        },
+        mapAnimation: 'flyTo',
+        rotateAnimation: false,
+        onChapterEnter: [
+            { layer: 'embalses-labels', opacity: 1 }
+        ],
+        onChapterExit: []
+        },
+
+        
+/** 6, Capítulo Cijara */   
         {
         id: 'cijara',
         alignment: 'right',
@@ -151,7 +177,7 @@ var config = {
         onChapterExit: []
                 },
 
-/** 6, Capítulo Garcia de Sola */
+/** 7, Capítulo Garcia de Sola */
             {
         id: 'garcia_de_sola',
         alignment: 'left',
@@ -185,7 +211,7 @@ var config = {
         onChapterExit: []
         },
 
-/** 7, Capítulo Orellana */
+/** 8, Capítulo Orellana */
         {
         id: 'orellana',
         alignment: 'right',
@@ -218,7 +244,7 @@ var config = {
         onChapterExit: []
         },
             
-/** 8, Capítulo la_serena */
+/** 9, Capítulo la_serena */
         {
         id: 'la_serena',
         alignment: 'left',
@@ -252,7 +278,7 @@ var config = {
         onChapterExit: []
         },
 
-/** 9, Capítulo Zújar */
+/** 10, Capítulo Zújar */
         {
         id: 'zujar',
         alignment: 'right',
@@ -285,6 +311,7 @@ var config = {
         onChapterExit: []
         },
 
+/** 11, Capítulo Explorar */
 
         {
   id: 'explorar',
@@ -294,10 +321,10 @@ var config = {
   /*image: './assets/serena.jpg',
   imageAlt: 'Vista panorámica del embalse de La Serena',*/
   description: `
-    <p>Ahora puedes explorar libremente: zoom, rotación, navegación, etc. </p>
+    <p>En esta sección puedes interactuar libremente con el mapa: amplía o reduce la escala, rota la vista y ajusta la inclinación para analizar con mayor detalle la ubicación y morfología de los embalses. </p>
   `,
   location: {
-    center: [-5.414837, 39.219733],
+    center: [-5.414837, 39.19733],
     zoom: 9,
     pitch: 0,
     bearing: 0
