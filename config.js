@@ -18,7 +18,7 @@ var config = {
     title: 'Gigantes de agua en Extremadura',
     subtitle: 'Embalses del sistema Guadiana-Zújar',
     //byline: 'Fernando Miranda',
-    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: autores indicados en cada recurso (uso educativo).<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
+    footer: 'Fuentes: GeoJSON de embalses y polígonos (elaboración propia a partir de datos públicos). Cartografía base: Mapbox. Imágenes: Wikipedia.<br>Plantilla: Mapbox storytelling + Scrollama. © 2026',
     chapters: [
   /** 1, Capítulo introducción */
         {
